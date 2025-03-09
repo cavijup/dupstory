@@ -1,0 +1,17 @@
+proyecto_dub/
+├── google_connection.py  # Conexión a Google Sheets
+├── graficos/
+│   ├── __init__.py       # Para que Python reconozca el directorio como paquete
+│   ├── grafico_dub.py    # Gráfico de progreso ID DUB
+│   ├── grafico_fechas.py # Gráfico de barras de fechas
+│   └── otras_visualizaciones.py  # Futuras visualizaciones
+├── paginas/
+│   ├── __init__.py
+│   ├── pagina_dub.py     # Código específico para la pestaña DUB
+│   ├── pagina_fies.py    # Código específico para la pestaña FIES
+│   └── pagina_demografia.py  # Código específico para la pestaña DEMOGRAFÍA
+├── utils/
+│   ├── __init__.py
+│   └── procesamiento_datos.py  # Funciones para procesar datos
+├── app.py                # Archivo principal que integra todo
+└── requirements.txt      # Dependencias
