@@ -6,16 +6,34 @@ import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde .env
+# Cargar variables de entorno desde .env para desarrollo local
 load_dotenv()
 
 # Función para establecer conexión con Google Sheets
 def connect_to_gsheets():
-    # Obtener credenciales de variables de entorno
+    # Intentar obtener credenciales de múltiples fuentes
+    
+    # 1. Primero intentar desde secretos de Streamlit (para producción)
+    if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+        try:
+            # Obtener credenciales directamente como diccionario
+            credentials_info = dict(st.secrets["gcp_service_account"])
+            
+            # Configurar las credenciales sin necesidad de archivo temporal
+            scopes = ['https://spreadsheets.google.com/feeds',
+                     'https://www.googleapis.com/auth/drive']
+            
+            creds = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+            client = gspread.authorize(creds)
+            return client
+        except Exception as e:
+            st.error(f"Error al usar credenciales de Streamlit Secrets: {e}")
+    
+    # 2. Si no se encontraron en secretos, intentar desde variables de entorno
     credentials_json = os.getenv("GOOGLE_CREDENTIALS")
     
     if not credentials_json:
-        st.error("No se encontraron las credenciales en las variables de entorno")
+        st.error("No se encontraron las credenciales en las variables de entorno ni en Streamlit Secrets")
         return None
         
     # Convertir el string JSON a diccionario
@@ -41,6 +59,11 @@ def connect_to_gsheets():
         return client
     except Exception as e:
         st.error(f"Error al conectar con Google Sheets: {e}")
+        # Intentar eliminar el archivo temporal si existe
+        try:
+            os.remove('temp_credentials.json')
+        except:
+            pass
         return None
 
 # Función para cargar datos
