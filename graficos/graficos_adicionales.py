@@ -207,17 +207,105 @@ def mostrar_matriz_graficos_barras(df):
     
     # PRIMERA FILA: Nivel y Estado de Escolaridad
     st.markdown("#### Educación")
-    col1, col2 = st.columns(2)
+    
+    # Inicializar estado de sesión para el filtro seleccionado
+    if 'nivel_educativo_seleccionado' not in st.session_state:
+        st.session_state.nivel_educativo_seleccionado = None
+    
+    # Crear columnas con distribución 60/40
+    col1, col2 = st.columns([6, 4])
     
     with col1:
-        fig = crear_grafico_barras_horizontal(df, 'Nivel_escolaridad', "Nivel de Escolaridad")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
+        # Crear gráfico interactivo de barras con selección
+        if 'Nivel_escolaridad' in df.columns:
+            conteo = df['Nivel_escolaridad'].value_counts()
+            data_plot = pd.DataFrame({
+                'Categoría': conteo.index,
+                'Cantidad': conteo.values
+            })
+            
+            # Ordenar para mejor visualización
+            data_plot = data_plot.sort_values('Cantidad', ascending=True)
+            
+            # Calcular porcentajes
+            total = conteo.sum()
+            data_plot['Porcentaje'] = (data_plot['Cantidad'] / total * 100).round(1)
+            
+            # Crear gráfico de barras con Plotly
+            fig = px.bar(
+                data_plot,
+                y='Categoría',
+                x='Cantidad',
+                title="Nivel de Escolaridad (Haz clic en una barra para filtrar)",
+                color='Cantidad',
+                color_continuous_scale="Blues",
+                text=data_plot['Porcentaje'].apply(lambda x: f"{x:.1f}%")
+            )
+            
+            # Configurar interactividad
+            fig.update_traces(
+                textposition='auto',
+                hovertemplate='<b>%{y}</b><br>Cantidad: %{x}<br>Porcentaje: %{text}<extra></extra>',
+                marker_line_color='white',
+                marker_line_width=0.5,
+                opacity=0.8
+            )
+            
+            fig.update_layout(
+                height=400,
+                margin=dict(l=20, r=20, t=50, b=20),
+                xaxis_title="Cantidad",
+                yaxis_title="",
+                coloraxis_showscale=False
+            )
+            
+            # Mostrar gráfico con Streamlit y capturar interacciones
+            selected_points = plotly_events(fig, click_event=True, override_height=400)
+            
+            # Procesar selección cuando se hace clic
+            if selected_points:
+                idx = selected_points[0].get('pointIndex')
+                if idx is not None and idx < len(data_plot):
+                    nivel_seleccionado = data_plot.iloc[idx]['Categoría']
+                    st.session_state.nivel_educativo_seleccionado = nivel_seleccionado
+            
+            # Agregar opción para deshacer filtro
+            if st.session_state.nivel_educativo_seleccionado:
+                if st.button(f"Quitar filtro: {st.session_state.nivel_educativo_seleccionado}"):
+                    st.session_state.nivel_educativo_seleccionado = None
+                    st.experimental_rerun()
+        else:
+            st.warning("No se encontró la columna 'Nivel_escolaridad' en los datos")
     
     with col2:
-        fig = crear_grafico_barras_horizontal(df, 'Estado_escolaridad', "Estado de Escolaridad")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
+        # Crear gráfico de pastel para estado de escolaridad con filtro aplicado
+        if 'Estado_escolaridad' in df.columns:
+            # Aplicar filtro si existe
+            df_filtrado = df
+            titulo = "Estado de Escolaridad"
+            
+            if st.session_state.nivel_educativo_seleccionado:
+                df_filtrado = df[df['Nivel_escolaridad'] == st.session_state.nivel_educativo_seleccionado]
+                titulo = f"Estado de Escolaridad para {st.session_state.nivel_educativo_seleccionado}"
+            
+            # Crear gráfico de pastel
+            fig_pastel = crear_grafico_pastel(df_filtrado, 'Estado_escolaridad', titulo)
+            if fig_pastel:
+                st.plotly_chart(fig_pastel, use_container_width=True)
+                
+                # Información sobre el filtro
+                filtro_info = f"Mostrando datos para: **{st.session_state.nivel_educativo_seleccionado}**" if st.session_state.nivel_educativo_seleccionado else "Mostrando todos los datos"
+                st.markdown(filtro_info)
+                
+                # Mostrar conteo
+                if st.session_state.nivel_educativo_seleccionado:
+                    total_filtrado = len(df_filtrado)
+                    porcentaje = (total_filtrado / len(df) * 100).round(2)
+                    st.markdown(f"Cantidad: **{total_filtrado:,}** ({porcentaje}% del total)")
+            else:
+                st.warning("No hay datos suficientes para mostrar este gráfico")
+        else:
+            st.warning("No se encontró la columna 'Estado_escolaridad' en los datos")
     
     # SEGUNDA FILA: Estado Civil y Ocupación Actual
     st.markdown("#### Situación Personal y Laboral")
