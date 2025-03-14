@@ -180,37 +180,23 @@ def mostrar_graficos_pastel(df):
 
 def mostrar_matriz_graficos_barras(df):
     """
-    Muestra una matriz 3x4 de gráficos de barras horizontales
+    Muestra múltiples filas de gráficos de barras horizontales organizados por temática
     """
-    st.markdown("### Matriz de Distribuciones Demográficas")
-    
-    # Definir las columnas a mostrar
-    columnas_matriz = [
-        'Estado_civil',            # AK (36)
-        'Nivel_escolaridad',       # AO (40)
-        'Estado_escolaridad',      # AP (41)
-        'Ocupacion_actual',        # AQ (42)
-        'Seguridad_social',        # AR (43)
-        'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar', # AS (44)
-        'Tipo_de_discapacidad',    # AT (45)
-        'Registro_Único_de_Víctimas_RUV', # AV (47)
-        'Se_considera_campesino',   # AW (48)
-        # Relleno con dos columnas vacías para completar la matriz 3x4
-        None,
-        None
-    ]
+    st.markdown("### Distribuciones Demográficas")
     
     # Mapa de posiciones (columna, índice)
     posiciones = {
-        'Estado_civil': 36,
-        'Nivel_escolaridad': 40,
-        'Estado_escolaridad': 41,
-        'Ocupacion_actual': 42,
-        'Seguridad_social': 43,
-        'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar': 44,
-        'Tipo_de_discapacidad': 45,
-        'Registro_Único_de_Víctimas_RUV': 47,
-        'Se_considera_campesino': 48
+        'Estado_civil': 36,               # AK
+        'Nivel_escolaridad': 40,          # AO
+        'Estado_escolaridad': 41,         # AP
+        'Ocupacion_actual': 42,           # AQ
+        'Seguridad_social': 43,           # AR
+        'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar': 44, # AS
+        'Tipo_de_discapacidad': 45,       # AT
+        'Registro_Único_de_Víctimas_RUV': 47, # AV
+        'Se_considera_campesino': 48,     # AW
+        'Se_reconoce_como': 37,           # AL
+        'A_que_pueblo': 39                # AN
     }
     
     # Verificar y asignar columnas por posición si es necesario
@@ -219,18 +205,114 @@ def mostrar_matriz_graficos_barras(df):
         if nombre_col not in df.columns and len(columnas) > indice:
             df[nombre_col] = df[columnas[indice]]
     
-    # Crear una matriz 3x4 (3 filas, 4 columnas)
-    for i in range(0, len(columnas_matriz), 4):
-        # Crear fila de 4 columnas
-        cols = st.columns(4)
-        
-        # Añadir hasta 4 gráficos en esta fila
-        for j in range(4):
-            idx = i + j
-            if idx < len(columnas_matriz) and columnas_matriz[idx] is not None:
-                with cols[j]:
-                    columna = columnas_matriz[idx]
-                    titulo = columna.replace('_', ' ').title()
-                    fig = crear_grafico_barras_horizontal(df, columna, titulo)
-                    if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+    # PRIMERA FILA: Nivel y Estado de Escolaridad
+    st.markdown("#### Educación")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(df, 'Nivel_escolaridad', "Nivel de Escolaridad")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Estado_escolaridad', "Estado de Escolaridad")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # SEGUNDA FILA: Estado Civil y Ocupación Actual
+    st.markdown("#### Situación Personal y Laboral")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(df, 'Estado_civil', "Estado Civil")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Ocupacion_actual', "Ocupación Actual")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # TERCERA FILA: Seguridad Social y Tipo de Discapacidad
+    st.markdown("#### Condiciones de Salud")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(df, 'Seguridad_social', "Seguridad Social")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Tipo_de_discapacidad', "Tipo de Discapacidad")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # CUARTA FILA: Registro de Víctimas y Se Considera Campesino
+    st.markdown("#### Condiciones Sociales")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(df, 'Registro_Único_de_Víctimas_RUV', "Registro Único de Víctimas")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Se_considera_campesino', "Se Considera Campesino")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # QUINTA FILA: Horas de oficios del hogar y Se reconoce como
+    st.markdown("#### Condiciones del Hogar y Reconocimiento")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(
+            df, 
+            'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar', 
+            "Horas Diarias en Oficios del Hogar"
+        )
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Se_reconoce_como', "Se Reconoce Como")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Agregar tabla de relación con "A qué pueblo"
+            if 'Se_reconoce_como' in df.columns and 'A_que_pueblo' in df.columns:
+                st.markdown("##### Desglose de reconocimiento por pueblo")
+                
+                # Filtrar solo las filas donde "Se_reconoce_como" indica reconocimiento étnico
+                reconocimiento_valores = df['Se_reconoce_como'].unique()
+                valores_interes = [val for val in reconocimiento_valores 
+                                  if val and str(val).lower() != 'ninguno' 
+                                  and str(val).lower() != 'no' 
+                                  and str(val).lower() != 'ninguna']
+                
+                if valores_interes:
+                    # Crear tabla cruzada de reconocimiento vs pueblo
+                    tabla_cruzada = pd.DataFrame()
+                    
+                    for valor in valores_interes:
+                        # Filtrar por valor de reconocimiento
+                        subset = df[df['Se_reconoce_como'] == valor]
+                        # Contar pueblos
+                        conteo_pueblos = subset['A_que_pueblo'].value_counts().reset_index()
+                        conteo_pueblos.columns = ['Pueblo', f'Cantidad ({valor})']
+                        
+                        if tabla_cruzada.empty:
+                            tabla_cruzada = conteo_pueblos
+                        else:
+                            # Unir a la tabla existente
+                            tabla_cruzada = tabla_cruzada.merge(
+                                conteo_pueblos, 
+                                on='Pueblo', 
+                                how='outer'
+                            )
+                    
+                    # Llenar NaN con ceros
+                    tabla_cruzada = tabla_cruzada.fillna(0)
+                    
+                    # Mostrar tabla
+                    st.dataframe(tabla_cruzada, use_container_width=True)
