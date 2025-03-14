@@ -3,6 +3,96 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+import json
+import uuid
+from streamlit.components.v1 import html
+
+def plotly_events(fig, click_event=True, select_event=False, hover_event=False, override_height=None):
+    """
+    Función para capturar eventos de Plotly.
+    
+    Parámetros:
+    - fig: figura de Plotly
+    - click_event: capturar eventos de clic
+    - select_event: capturar eventos de selección
+    - hover_event: capturar eventos de hover
+    - override_height: altura personalizada
+    
+    Retorna:
+    - Lista de puntos seleccionados
+    """
+    # Generar un ID único para este componente
+    div_id = f"plotly-{uuid.uuid4()}"
+    
+    # Configurar qué eventos capturar
+    event_names = []
+    if click_event:
+        event_names.append("click")
+    if select_event:
+        event_names.append("select")
+    if hover_event:
+        event_names.append("hover")
+    
+    # Variable para almacenar los puntos seleccionados
+    selected_points_key = f"{div_id}-selected-points"
+    if selected_points_key not in st.session_state:
+        st.session_state[selected_points_key] = []
+    
+    # Convertir la figura a JSON
+    fig_json = fig.to_json()
+    
+    # Crear el HTML personalizado con el gráfico y los manejadores de eventos
+    component_html = f"""
+    <div id="{div_id}"></div>
+    <script>
+        // Asegurarse de que Plotly esté disponible
+        if (window.Plotly) {{
+            var fig = {fig_json};
+            Plotly.newPlot("{div_id}", fig.data, fig.layout, {{responsive: true}});
+            
+            var selected_points = [];
+            
+            // Manejar eventos
+            {div_id}.on("plotly_click", function(data) {{
+                selected_points = [];
+                var point = data.points[0];
+                selected_points.push({{
+                    curveNumber: point.curveNumber,
+                    pointNumber: point.pointNumber,
+                    pointIndex: point.pointIndex,
+                    x: point.x,
+                    y: point.y
+                }});
+                console.log("Punto seleccionado:", selected_points);
+                
+                // Enviar los datos al backend de Streamlit
+                const json_data = JSON.stringify(selected_points);
+                window.parent.postMessage({{
+                    type: "streamlit:setComponentValue",
+                    value: json_data
+                }}, "*");
+            }});
+        }}
+    </script>
+    """
+    
+    # Crear componente HTML
+    selected_points_json = html(
+        component_html,
+        height=override_height if override_height else fig.layout.height or 400,
+        key=div_id
+    )
+    
+    # Procesar respuesta
+    if selected_points_json:
+        try:
+            selected_points = json.loads(selected_points_json)
+            st.session_state[selected_points_key] = selected_points
+            return selected_points
+        except:
+            return []
+    
+    return st.session_state[selected_points_key]
 
 def crear_grafico_pastel(df, columna, titulo=None, limite_categorias=10):
     """
@@ -236,13 +326,13 @@ def mostrar_matriz_graficos_barras(df):
                 data_plot,
                 y='Categoría',
                 x='Cantidad',
-                title="Nivel de Escolaridad (Haz clic en una barra para filtrar)",
+                title="Nivel de Escolaridad (Selecciona para filtrar)",
                 color='Cantidad',
                 color_continuous_scale="Blues",
                 text=data_plot['Porcentaje'].apply(lambda x: f"{x:.1f}%")
             )
             
-            # Configurar interactividad
+            # Configurar diseño
             fig.update_traces(
                 textposition='auto',
                 hovertemplate='<b>%{y}</b><br>Cantidad: %{x}<br>Porcentaje: %{text}<extra></extra>',
@@ -259,21 +349,23 @@ def mostrar_matriz_graficos_barras(df):
                 coloraxis_showscale=False
             )
             
-            # Mostrar gráfico con Streamlit y capturar interacciones
-            selected_points = plotly_events(fig, click_event=True, override_height=400)
+            # Mostrar gráfico con Streamlit
+            st.plotly_chart(fig, use_container_width=True)
             
-            # Procesar selección cuando se hace clic
-            if selected_points:
-                idx = selected_points[0].get('pointIndex')
-                if idx is not None and idx < len(data_plot):
-                    nivel_seleccionado = data_plot.iloc[idx]['Categoría']
-                    st.session_state.nivel_educativo_seleccionado = nivel_seleccionado
+            # Crear selector para filtrar
+            nivel_options = ["Todos"] + sorted(conteo.index.tolist())
+            selected_level = st.selectbox(
+                "Filtrar por nivel educativo:",
+                nivel_options,
+                index=0
+            )
             
-            # Agregar opción para deshacer filtro
-            if st.session_state.nivel_educativo_seleccionado:
-                if st.button(f"Quitar filtro: {st.session_state.nivel_educativo_seleccionado}"):
-                    st.session_state.nivel_educativo_seleccionado = None
-                    st.experimental_rerun()
+            # Actualizar el filtro basado en la selección
+            if selected_level != "Todos":
+                st.session_state.nivel_educativo_seleccionado = selected_level
+            else:
+                st.session_state.nivel_educativo_seleccionado = None
+            
         else:
             st.warning("No se encontró la columna 'Nivel_escolaridad' en los datos")
     
@@ -286,7 +378,7 @@ def mostrar_matriz_graficos_barras(df):
             
             if st.session_state.nivel_educativo_seleccionado:
                 df_filtrado = df[df['Nivel_escolaridad'] == st.session_state.nivel_educativo_seleccionado]
-                titulo = f"Estado de Escolaridad para {st.session_state.nivel_educativo_seleccionado}"
+                titulo = f"Estado para {st.session_state.nivel_educativo_seleccionado}"
             
             # Crear gráfico de pastel
             fig_pastel = crear_grafico_pastel(df_filtrado, 'Estado_escolaridad', titulo)
@@ -294,14 +386,10 @@ def mostrar_matriz_graficos_barras(df):
                 st.plotly_chart(fig_pastel, use_container_width=True)
                 
                 # Información sobre el filtro
-                filtro_info = f"Mostrando datos para: **{st.session_state.nivel_educativo_seleccionado}**" if st.session_state.nivel_educativo_seleccionado else "Mostrando todos los datos"
-                st.markdown(filtro_info)
-                
-                # Mostrar conteo
                 if st.session_state.nivel_educativo_seleccionado:
                     total_filtrado = len(df_filtrado)
                     porcentaje = (total_filtrado / len(df) * 100).round(2)
-                    st.markdown(f"Cantidad: **{total_filtrado:,}** ({porcentaje}% del total)")
+                    st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje}% del total)")
             else:
                 st.warning("No hay datos suficientes para mostrar este gráfico")
         else:
