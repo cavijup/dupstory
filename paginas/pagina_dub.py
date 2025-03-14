@@ -3,6 +3,7 @@ from google_connection import load_data
 from graficos.grafico_dub import crear_grafico_dub
 from graficos.grafico_fechas import crear_grafico_fechas
 from utils.svg_utils import mostrar_estadisticas_sexo
+from graficos.graficos_adicionales import crear_grafico_pastel, crear_grafico_barras_horizontal, mostrar_graficos_pastel, mostrar_matriz_graficos_barras
 
 def mostrar_pagina_dub():
     """
@@ -62,6 +63,18 @@ def mostrar_pagina_dub():
                 
                 # Mostrar estadísticas de sexo con imágenes
                 mostrar_estadisticas_sexo(df)
+                
+                # Separador visual
+                st.markdown("---")
+                
+                # 5. QUINTA FILA: GRÁFICOS DE PASTEL PARA IDENTIDAD Y ORIENTACIÓN SEXUAL
+                mostrar_graficos_pastel(df)
+                
+                # Separador visual
+                st.markdown("---")
+                
+                # 6. SEXTA FILA: MATRIZ DE GRÁFICOS DE BARRAS
+                mostrar_matriz_graficos_barras(df)
                 
             else:
                 st.error("No se pudieron cargar los datos.")
