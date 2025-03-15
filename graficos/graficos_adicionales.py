@@ -409,7 +409,39 @@ def mostrar_matriz_graficos_barras(df):
         if fig:
             st.plotly_chart(fig, use_container_width=True)
     
-    # TERCERA FILA: Seguridad Social y Tipo de Discapacidad (Tablas)
+    # TERCERA FILA: Registro de Víctimas y Se Considera Campesino (anteriormente era Condiciones de Salud)
+    st.markdown("#### Condiciones Sociales")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(df, 'Registro_Único_de_Víctimas_RUV', "Registro Único de Víctimas")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Se_considera_campesino', "Se Considera Campesino")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # CUARTA FILA: Horas de oficios del hogar y Se reconoce como
+    st.markdown("#### Condiciones del Hogar y Reconocimiento")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = crear_grafico_barras_horizontal(
+            df, 
+            'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar', 
+            "Horas Diarias en Oficios del Hogar"
+        )
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = crear_grafico_barras_horizontal(df, 'Se_reconoce_como', "Se Reconoce Como")
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # QUINTA FILA: Seguridad Social y Tipo de Discapacidad (Tablas)
     st.markdown("#### Condiciones de Salud")
     
     # Inicializar estado de sesión para el filtro de seguridad social
@@ -489,73 +521,3 @@ def mostrar_matriz_graficos_barras(df):
                 st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje:.2f}% del total)")
         else:
             st.warning("No se encontró la columna 'Tipo_de_discapacidad' en los datos")
-    
-    # CUARTA FILA: Registro de Víctimas y Se Considera Campesino
-    st.markdown("#### Condiciones Sociales")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        fig = crear_grafico_barras_horizontal(df, 'Registro_Único_de_Víctimas_RUV', "Registro Único de Víctimas")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        fig = crear_grafico_barras_horizontal(df, 'Se_considera_campesino', "Se Considera Campesino")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
-    
-    # QUINTA FILA: Horas de oficios del hogar y Se reconoce como
-    st.markdown("#### Condiciones del Hogar y Reconocimiento")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        fig = crear_grafico_barras_horizontal(
-            df, 
-            'Cuántas_horas_al_día_dedica_a_hacer_los_oficios_del_hogar', 
-            "Horas Diarias en Oficios del Hogar"
-        )
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        fig = crear_grafico_barras_horizontal(df, 'Se_reconoce_como', "Se Reconoce Como")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Agregar tabla de relación con "A qué pueblo"
-            if 'Se_reconoce_como' in df.columns and 'A_que_pueblo' in df.columns:
-                st.markdown("##### Desglose de reconocimiento por pueblo")
-                
-                # Filtrar solo las filas donde "Se_reconoce_como" indica reconocimiento étnico
-                reconocimiento_valores = df['Se_reconoce_como'].unique()
-                valores_interes = [val for val in reconocimiento_valores 
-                                  if val and str(val).lower() != 'ninguno' 
-                                  and str(val).lower() != 'no' 
-                                  and str(val).lower() != 'ninguna']
-                
-                if valores_interes:
-                    # Crear tabla cruzada de reconocimiento vs pueblo
-                    tabla_cruzada = pd.DataFrame()
-                    
-                    for valor in valores_interes:
-                        # Filtrar por valor de reconocimiento
-                        subset = df[df['Se_reconoce_como'] == valor]
-                        # Contar pueblos
-                        conteo_pueblos = subset['A_que_pueblo'].value_counts().reset_index()
-                        conteo_pueblos.columns = ['Pueblo', f'Cantidad ({valor})']
-                        
-                        if tabla_cruzada.empty:
-                            tabla_cruzada = conteo_pueblos
-                        else:
-                            # Unir a la tabla existente
-                            tabla_cruzada = tabla_cruzada.merge(
-                                conteo_pueblos, 
-                                on='Pueblo', 
-                                how='outer'
-                            )
-                    
-                    # Llenar NaN con ceros
-                    tabla_cruzada = tabla_cruzada.fillna(0)
-                    
-                    # Mostrar tabla
-                    st.dataframe(tabla_cruzada, use_container_width=True)
