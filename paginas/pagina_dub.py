@@ -20,7 +20,7 @@ def mostrar_pagina_dub():
     with st.spinner("Cargando datos desde Google Sheets..."):
         try:
             # Cargar los datos desde la hoja "DUB"
-            sheet_id = "16jdYbgDidCSxYv3JRzWgmM2POxUn9cw6xVRYmfSMqhU"
+            sheet_id = "1haZINioOFe4WTL2G9FzsYt0p4-8uJ5WKbukexBYhx_o"
             df = load_data(sheet_id, "DUB")
             
             if df is not None and not df.empty:

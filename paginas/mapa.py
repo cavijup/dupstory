@@ -63,7 +63,7 @@ def cargar_info_comedores():
     """
     try:
         # Usar el mismo sheet_id que para la tabla DUB
-        sheet_id = "16jdYbgDidCSxYv3JRzWgmM2POxUn9cw6xVRYmfSMqhU"
+        sheet_id = "1haZINioOFe4WTL2G9FzsYt0p4-8uJ5WKbukexBYhx_o"
         df_comedores = load_data(sheet_id, "COMEDORES")
         
         if df_comedores is not None and not df_comedores.empty:
