@@ -54,13 +54,13 @@ def main():
             st.session_state.df = df
     
     with tab2:
-        mostrar_pagina_fies()
+        mostrar_mapa()
     
     with tab3:
-        mostrar_pagina_demografia()
+        mostrar_pagina_fies()
     
     with tab4:
-        mostrar_mapa()
+        mostrar_pagina_demografia()
     
     # Agregar pie de página
     st.markdown("---")
