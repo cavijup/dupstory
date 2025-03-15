@@ -11,6 +11,7 @@ st.set_page_config(
 from paginas.pagina_dub import mostrar_pagina_dub
 from paginas.pagina_fies import mostrar_pagina_fies
 from paginas.pagina_demografia import mostrar_pagina_demografia
+from paginas.mapa import mostrar_mapa
 
 # Estilos personalizados para fondo blanco
 st.markdown("""
@@ -43,17 +44,23 @@ def main():
     st.title("Dashboard de Visualización de Datos DUB")
     
     # Crear pestañas para la navegación
-    tab1, tab2, tab3 = st.tabs(["DUB", "FIES", "DEMOGRAFÍA"])
+    tab1, tab2, tab3, tab4 = st.tabs(["DUB", "FIES", "DEMOGRAFÍA", "MAPA"])
     
     # Contenido para cada pestaña
     with tab1:
-        mostrar_pagina_dub()
+        # Guardar el dataframe en session_state para compartirlo entre pestañas
+        df = mostrar_pagina_dub()
+        if df is not None:
+            st.session_state.df = df
     
     with tab2:
         mostrar_pagina_fies()
     
     with tab3:
         mostrar_pagina_demografia()
+    
+    with tab4:
+        mostrar_mapa()
     
     # Agregar pie de página
     st.markdown("---")

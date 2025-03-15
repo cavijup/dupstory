@@ -10,6 +10,9 @@ def mostrar_pagina_dub():
     """
     Muestra el contenido de la pestaña DUB sin la imagen principal,
     solo con los gráficos y visualizaciones.
+    
+    Returns:
+        DataFrame: Los datos cargados o None si hay un error
     """
     st.header("Datos DUB")
     
@@ -78,7 +81,11 @@ def mostrar_pagina_dub():
                 # Modificamos el orden de las secciones
                 mostrar_matriz_graficos_barras(df)
                 
+                # Devolver el DataFrame para que pueda ser usado en otras pestañas
+                return df
             else:
                 st.error("No se pudieron cargar los datos.")
+                return None
         except Exception as e:
             st.error(f"Error en la aplicación: {e}")
+            return None
