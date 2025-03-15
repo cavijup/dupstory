@@ -521,3 +521,6 @@ def mostrar_matriz_graficos_barras(df):
                 st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje:.2f}% del total)")
         else:
             st.warning("No se encontró la columna 'Tipo_de_discapacidad' en los datos")
+            
+            
+            
