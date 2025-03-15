@@ -4,6 +4,7 @@ from graficos.grafico_dub import crear_grafico_dub
 from graficos.grafico_fechas import crear_grafico_fechas
 from utils.svg_utils import mostrar_estadisticas_sexo
 from graficos.graficos_adicionales import crear_grafico_pastel, crear_grafico_barras_horizontal, mostrar_graficos_pastel, mostrar_matriz_graficos_barras
+# Importar la función plotly_events directamente
 
 
 def mostrar_pagina_dub():
@@ -75,6 +76,7 @@ def mostrar_pagina_dub():
                 st.markdown("---")
                 
                 # 6. SEXTA FILA: MATRIZ DE GRÁFICOS DE BARRAS
+                # Modificamos el orden de las secciones
                 mostrar_matriz_graficos_barras(df)
                 
             else:
