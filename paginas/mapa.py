@@ -62,77 +62,90 @@ def crear_mapa(df):
     """
     st.header("Mapa de Ubicaciones")
     
+    # Crear una copia para no modificar el original
+    df_temp = df.copy()
+    
     # Verificar si existen las columnas necesarias
     columnas_requeridas = ["UBICACION_PREDEFINIDA", "Nombre_comedor", "Se_reconoce_como"]
-    columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
+    columnas_faltantes = [col for col in columnas_requeridas if col not in df_temp.columns]
     
     # Si faltan columnas, buscar por posición
     if columnas_faltantes:
         st.warning(f"Columnas faltantes: {', '.join(columnas_faltantes)}. Intentando ubicar por posición...")
         
-        columnas = list(df.columns)
+        columnas = list(df_temp.columns)
         
         # Asignar por posición si es posible
-        if "UBICACION_PREDEFINIDA" not in df.columns and len(columnas) > 105:  # DA = posición 105
-            df["UBICACION_PREDEFINIDA"] = df[columnas[105]]
+        if "UBICACION_PREDEFINIDA" not in df_temp.columns and len(columnas) > 105:  # DA = posición 105
+            df_temp["UBICACION_PREDEFINIDA"] = df_temp[columnas[105]]
             st.success("Columna 'UBICACION_PREDEFINIDA' asignada por posición.")
         
-        if "Nombre_comedor" not in df.columns and len(columnas) > 100:  # CX = aproximadamente posición 100
-            df["Nombre_comedor"] = df[columnas[100]]
+        if "Nombre_comedor" not in df_temp.columns and len(columnas) > 100:  # CX = aproximadamente posición 100
+            df_temp["Nombre_comedor"] = df_temp[columnas[100]]
             st.success("Columna 'Nombre_comedor' asignada por posición.")
         
-        if "Se_reconoce_como" not in df.columns and len(columnas) > 37:  # AL = posición 37
-            df["Se_reconoce_como"] = df[columnas[37]]
+        if "Se_reconoce_como" not in df_temp.columns and len(columnas) > 37:  # AL = posición 37
+            df_temp["Se_reconoce_como"] = df_temp[columnas[37]]
             st.success("Columna 'Se_reconoce_como' asignada por posición.")
     
     # Verificar nuevamente si existen las columnas necesarias
-    if "UBICACION_PREDEFINIDA" not in df.columns:
+    if "UBICACION_PREDEFINIDA" not in df_temp.columns:
         st.error("No se pudo encontrar la columna de ubicación. No se puede crear el mapa.")
         return
     
-    if "Nombre_comedor" not in df.columns:
+    if "Nombre_comedor" not in df_temp.columns:
         st.warning("No se pudo encontrar la columna de nombre de comedor. Se usará 'Desconocido'.")
-        df["Nombre_comedor"] = "Desconocido"
+        df_temp["Nombre_comedor"] = "Desconocido"
     
-    if "Se_reconoce_como" not in df.columns:
+    if "Se_reconoce_como" not in df_temp.columns:
         st.warning("No se pudo encontrar la columna de reconocimiento étnico. No se mostrará esta información.")
-        df["Se_reconoce_como"] = "No especificado"
+        df_temp["Se_reconoce_como"] = "No especificado"
     
     # Crear columnas para latitud y longitud
-    df['lat'] = None
-    df['lon'] = None
+    df_temp['lat'] = None
+    df_temp['lon'] = None
     
     # Extraer coordenadas
-    for idx, row in df.iterrows():
+    for idx, row in df_temp.iterrows():
         lat, lon = extraer_coordenadas(row['UBICACION_PREDEFINIDA'])
-        df.at[idx, 'lat'] = lat
-        df.at[idx, 'lon'] = lon
+        df_temp.at[idx, 'lat'] = lat
+        df_temp.at[idx, 'lon'] = lon
     
     # Limpiar nombres de comedores
-    df['Nombre_comedor_limpio'] = df['Nombre_comedor'].apply(limpiar_nombre_comedor)
+    df_temp['Nombre_comedor_limpio'] = df_temp['Nombre_comedor'].apply(limpiar_nombre_comedor)
     
     # Filtrar filas con coordenadas válidas
-    df_map = df.dropna(subset=['lat', 'lon']).copy()
+    df_map = df_temp.dropna(subset=['lat', 'lon']).copy()
     
     if df_map.empty:
         st.error("No se encontraron coordenadas válidas en los datos. Por favor verifica el formato de la columna 'UBICACION_PREDEFINIDA'.")
         
         # Mostrar ejemplos de los valores de ubicación para ayudar a depurar
         st.subheader("Ejemplos de valores en la columna 'UBICACION_PREDEFINIDA':")
-        ejemplos = df['UBICACION_PREDEFINIDA'].dropna().sample(min(5, len(df))).tolist()
+        ejemplos = df_temp['UBICACION_PREDEFINIDA'].dropna().sample(min(5, len(df_temp))).tolist()
         for i, ejemplo in enumerate(ejemplos):
             st.code(f"Ejemplo {i+1}: {ejemplo}")
         
         return
     
-    # Agrupar datos por comedor
-    agrupado = df_map.groupby(['Nombre_comedor_limpio', 'lat', 'lon']).agg({
-        'Nombre_comedor_limpio': 'count',
-        'Se_reconoce_como': lambda x: x.value_counts().to_dict()
-    }).reset_index()
+    # Agrupar datos por comedor - CORREGIDO PARA EVITAR ERROR DE COLUMNA DUPLICADA
+    grouped_data = []
     
-    # Renombrar columnas
-    agrupado.columns = ['Comedor', 'lat', 'lon', 'Conteo', 'Distribución_étnica']
+    for (comedor, lat, lon), group in df_map.groupby(['Nombre_comedor_limpio', 'lat', 'lon']):
+        # Contar distribución étnica
+        etnia_counts = group['Se_reconoce_como'].value_counts().to_dict()
+        
+        # Agregar a la lista de resultados
+        grouped_data.append({
+            'Comedor': comedor,
+            'lat': lat,
+            'lon': lon,
+            'Conteo': len(group),
+            'Distribución_étnica': etnia_counts
+        })
+    
+    # Crear dataframe con los datos agrupados
+    agrupado = pd.DataFrame(grouped_data)
     
     # Crear texto para hover con distribución étnica
     def crear_texto_hover(row):
@@ -195,8 +208,8 @@ def crear_mapa(df):
         mapbox_style="carto-positron",
         mapbox=dict(
             center=dict(
-                lat=agrupado_filtrado["lat"].mean(),
-                lon=agrupado_filtrado["lon"].mean()
+                lat=agrupado_filtrado["lat"].mean() if not agrupado_filtrado.empty else 4.6097,
+                lon=agrupado_filtrado["lon"].mean() if not agrupado_filtrado.empty else -74.0817
             ),
         ),
         height=700,
@@ -219,7 +232,7 @@ def crear_mapa(df):
         )
     
     with col3:
-        promedio = agrupado_filtrado['Conteo'].mean()
+        promedio = agrupado_filtrado['Conteo'].mean() if not agrupado_filtrado.empty else 0
         st.metric(
             label="Promedio por Ubicación",
             value=f"{promedio:.1f}"
@@ -232,16 +245,19 @@ def crear_mapa(df):
     st.subheader("Resumen de Ubicaciones")
     
     # Preparar tabla resumida para mostrar
-    tabla_resumen = agrupado_filtrado[['Comedor', 'Conteo']].copy()
-    tabla_resumen['Porcentaje'] = (tabla_resumen['Conteo'] / tabla_resumen['Conteo'].sum() * 100).round(2)
-    tabla_resumen['Porcentaje'] = tabla_resumen['Porcentaje'].astype(str) + '%'
-    tabla_resumen = tabla_resumen.sort_values('Conteo', ascending=False)
-    
-    # Formatear números con separador de miles
-    tabla_resumen['Conteo'] = tabla_resumen['Conteo'].apply(lambda x: f"{x:,}")
-    
-    # Mostrar tabla
-    st.dataframe(tabla_resumen, use_container_width=True)
+    if not agrupado_filtrado.empty:
+        tabla_resumen = agrupado_filtrado[['Comedor', 'Conteo']].copy()
+        tabla_resumen['Porcentaje'] = (tabla_resumen['Conteo'] / tabla_resumen['Conteo'].sum() * 100).round(2)
+        tabla_resumen['Porcentaje'] = tabla_resumen['Porcentaje'].astype(str) + '%'
+        tabla_resumen = tabla_resumen.sort_values('Conteo', ascending=False)
+        
+        # Formatear números con separador de miles
+        tabla_resumen['Conteo'] = tabla_resumen['Conteo'].apply(lambda x: f"{x:,}")
+        
+        # Mostrar tabla
+        st.dataframe(tabla_resumen, use_container_width=True)
+    else:
+        st.info("No hay datos para mostrar en la tabla de resumen.")
 
 def mostrar_mapa():
     """
