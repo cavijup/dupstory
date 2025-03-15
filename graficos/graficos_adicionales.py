@@ -409,7 +409,7 @@ def mostrar_matriz_graficos_barras(df):
         if fig:
             st.plotly_chart(fig, use_container_width=True)
     
-    # TERCERA FILA: Seguridad Social y Tipo de Discapacidad (Gráficos de torta)
+    # TERCERA FILA: Seguridad Social y Tipo de Discapacidad (Tablas)
     st.markdown("#### Condiciones de Salud")
     
     # Inicializar estado de sesión para el filtro de seguridad social
@@ -420,35 +420,43 @@ def mostrar_matriz_graficos_barras(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Gráfico de pastel para Seguridad Social
+        # Tabla para Seguridad Social
         if 'Seguridad_social' in df.columns:
-            # Crear gráfico de pastel
-            fig_seguridad = crear_grafico_pastel(df, 'Seguridad_social', "Seguridad Social")
-            if fig_seguridad:
-                st.plotly_chart(fig_seguridad, use_container_width=True)
-                
-                # Crear selector para filtrar
-                # Obtener valores únicos de seguridad social
-                valores_seguridad = ["Todos"] + sorted(df['Seguridad_social'].dropna().unique().tolist())
-                selected_seguridad = st.selectbox(
-                    "Filtrar por tipo de seguridad social:",
-                    valores_seguridad,
-                    index=0,
-                    key="selector_seguridad_social"
-                )
-                
-                # Actualizar el filtro basado en la selección
-                if selected_seguridad != "Todos":
-                    st.session_state.seguridad_social_seleccionada = selected_seguridad
-                else:
-                    st.session_state.seguridad_social_seleccionada = None
+            st.subheader("Seguridad Social")
+            
+            # Crear tabla de frecuencias
+            conteo_seguridad = df['Seguridad_social'].value_counts().reset_index()
+            conteo_seguridad.columns = ['Tipo de Seguridad Social', 'Cantidad']
+            
+            # Calcular porcentajes
+            total = conteo_seguridad['Cantidad'].sum()
+            conteo_seguridad['Porcentaje'] = (conteo_seguridad['Cantidad'] / total * 100).round(2).astype(str) + '%'
+            
+            # Formatear números con separador de miles
+            conteo_seguridad['Cantidad'] = conteo_seguridad['Cantidad'].apply(lambda x: f"{x:,}")
+            
+            # Mostrar tabla
+            st.dataframe(conteo_seguridad, use_container_width=True, height=400)
+            
+            # Crear selector para filtrar
+            valores_seguridad = ["Todos"] + sorted(df['Seguridad_social'].dropna().unique().tolist())
+            selected_seguridad = st.selectbox(
+                "Filtrar tabla de discapacidad por tipo de seguridad social:",
+                valores_seguridad,
+                index=0,
+                key="selector_seguridad_social"
+            )
+            
+            # Actualizar el filtro basado en la selección
+            if selected_seguridad != "Todos":
+                st.session_state.seguridad_social_seleccionada = selected_seguridad
             else:
-                st.warning("No hay datos suficientes para mostrar este gráfico")
+                st.session_state.seguridad_social_seleccionada = None
         else:
             st.warning("No se encontró la columna 'Seguridad_social' en los datos")
     
     with col2:
-        # Gráfico de pastel para Tipo de Discapacidad con filtro aplicado
+        # Tabla para Tipo de Discapacidad con filtro aplicado
         if 'Tipo_de_discapacidad' in df.columns:
             # Aplicar filtro si existe
             df_filtrado = df
@@ -458,18 +466,27 @@ def mostrar_matriz_graficos_barras(df):
                 df_filtrado = df[df['Seguridad_social'] == st.session_state.seguridad_social_seleccionada]
                 titulo = f"Discapacidad con {st.session_state.seguridad_social_seleccionada}"
             
-            # Crear gráfico de pastel
-            fig_discapacidad = crear_grafico_pastel(df_filtrado, 'Tipo_de_discapacidad', titulo)
-            if fig_discapacidad:
-                st.plotly_chart(fig_discapacidad, use_container_width=True)
-                
-                # Información sobre el filtro
-                if st.session_state.seguridad_social_seleccionada:
-                    total_filtrado = len(df_filtrado)
-                    porcentaje = (total_filtrado / len(df) * 100)
-                    st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje:.2f}% del total)")
-            else:
-                st.warning("No hay datos suficientes para mostrar este gráfico")
+            st.subheader(titulo)
+            
+            # Crear tabla de frecuencias
+            conteo_discapacidad = df_filtrado['Tipo_de_discapacidad'].value_counts().reset_index()
+            conteo_discapacidad.columns = ['Tipo de Discapacidad', 'Cantidad']
+            
+            # Calcular porcentajes
+            total_disc = conteo_discapacidad['Cantidad'].sum()
+            conteo_discapacidad['Porcentaje'] = (conteo_discapacidad['Cantidad'] / total_disc * 100).round(2).astype(str) + '%'
+            
+            # Formatear números con separador de miles
+            conteo_discapacidad['Cantidad'] = conteo_discapacidad['Cantidad'].apply(lambda x: f"{x:,}")
+            
+            # Mostrar tabla
+            st.dataframe(conteo_discapacidad, use_container_width=True, height=400)
+            
+            # Información sobre el filtro
+            if st.session_state.seguridad_social_seleccionada:
+                total_filtrado = len(df_filtrado)
+                porcentaje = (total_filtrado / len(df) * 100)
+                st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje:.2f}% del total)")
         else:
             st.warning("No se encontró la columna 'Tipo_de_discapacidad' en los datos")
     
