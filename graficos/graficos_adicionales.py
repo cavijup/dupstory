@@ -388,8 +388,8 @@ def mostrar_matriz_graficos_barras(df):
                 # Información sobre el filtro
                 if st.session_state.nivel_educativo_seleccionado:
                     total_filtrado = len(df_filtrado)
-                    porcentaje = (total_filtrado / len(df) * 100).round(2)
-                    st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje}% del total)")
+                    porcentaje = (total_filtrado / len(df) * 100)
+                    st.markdown(f"Mostrando **{total_filtrado:,}** registros ({porcentaje:.2f}% del total)")
             else:
                 st.warning("No hay datos suficientes para mostrar este gráfico")
         else:
