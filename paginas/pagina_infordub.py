@@ -62,10 +62,6 @@ def crear_analisis_proyeccion(df):
             if fecha_actual.weekday() < 5 and fecha_actual.date() not in [f.date() for f in feriados]:
                 dias_agregados += 1
         
-        # Calcular registros por día necesarios para terminarlo un mes antes
-        fecha_un_mes_antes = fecha_actual - timedelta(days=30)
-        registros_diarios_meta = registros_faltantes / (dias_calendario - 30)
-        
         # Mostrar resultados
         col1, col2 = st.columns(2)
         
@@ -116,15 +112,30 @@ def crear_analisis_proyeccion(df):
             fecha_estimada = fecha_actual.strftime("%d de %B, %Y")
             st.metric("Fecha estimada de finalización", fecha_estimada)
             
+            # Reemplazar la sección "Para terminar un mes antes" con "Para terminar antes del 25 de abril"
+            fecha_limite = pd.Timestamp('2025-04-25')
+            dias_hasta_limite = (fecha_limite - datetime.now().date()).days
+            dias_laborables_hasta_limite = 0
+            fecha_contador = datetime.now().date()
+
+            # Contar días laborables hasta la fecha límite
+            for _ in range(dias_hasta_limite):
+                fecha_contador += timedelta(days=1)
+                # Verificar si es día hábil (no fin de semana ni feriado)
+                if fecha_contador.weekday() < 5 and fecha_contador not in [f.date() for f in feriados]:
+                    dias_laborables_hasta_limite += 1
+
+            # Calcular registros diarios necesarios para cumplir la meta antes de la fecha límite
+            registros_diarios_meta = registros_faltantes / dias_laborables_hasta_limite if dias_laborables_hasta_limite > 0 else 0
+
             # Recomendación
-            st.subheader("Para terminar un mes antes")
-            fecha_objetivo = fecha_un_mes_antes.strftime("%d de %B, %Y")
+            st.subheader("Para terminar antes del 25 de abril")
             st.metric(
                 "Registros diarios necesarios", 
                 f"{registros_diarios_meta:.1f}", 
                 f"{registros_diarios_meta - promedio_diario:.1f} más que el promedio actual"
             )
-            st.info(f"Para terminar el {fecha_objetivo}, necesitas registrar aproximadamente {int(registros_diarios_meta)} DUB por día laborable.")
+            st.info(f"Para completar la meta antes del 25 de abril de 2025 (fecha límite), necesitas registrar aproximadamente {int(registros_diarios_meta)} IDs DUB por día laborable.")
         
         # Agregar información adicional
         st.markdown("---")
