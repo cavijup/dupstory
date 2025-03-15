@@ -66,7 +66,6 @@ def connect_to_gsheets():
             pass
         return None
 
-# Función para cargar datos
 def load_data(sheet_id, sheet_name=0):
     try:
         client = connect_to_gsheets()
@@ -75,9 +74,32 @@ def load_data(sheet_id, sheet_name=0):
             sheet = client.open_by_key(sheet_id)
             # Obtener la primera hoja o la especificada
             worksheet = sheet.get_worksheet(sheet_name) if isinstance(sheet_name, int) else sheet.worksheet(sheet_name)
-            # Obtener todos los datos
-            data = worksheet.get_all_records()
-            return pd.DataFrame(data)
+            
+            # Obtener todos los valores como una lista de listas
+            values = worksheet.get_values()
+            
+            if not values:
+                st.error("No se encontraron datos en la hoja.")
+                return None
+                
+            # La primera fila contiene los encabezados
+            headers = values[0]
+            
+            # Filtrar filas vacías (filas donde todos los elementos son cadenas vacías)
+            data_rows = []
+            for row in values[1:]:  # Excluir la fila de encabezados
+                # Extender la fila si es más corta que los encabezados
+                extended_row = row + [''] * (len(headers) - len(row))
+                
+                # Verificar si la fila tiene al menos un valor no vacío
+                if any(cell.strip() for cell in extended_row):
+                    data_rows.append(extended_row)
+            
+            # Crear DataFrame sólo con filas no vacías
+            df = pd.DataFrame(data_rows, columns=headers)
+            
+            st.success(f"Datos cargados correctamente. Total de filas con datos: {len(df)}")
+            return df
         else:
             st.error("No se pudo conectar con Google Sheets")
             return None
