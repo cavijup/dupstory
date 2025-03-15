@@ -113,21 +113,24 @@ def crear_analisis_proyeccion(df):
             st.metric("Fecha estimada de finalización", fecha_estimada)
             
             # Reemplazar la sección "Para terminar un mes antes" con "Para terminar antes del 25 de abril"
+            # Corregido: Convertir ambos a datetime para la resta
             fecha_limite = pd.Timestamp('2025-04-25')
-            dias_hasta_limite = (fecha_limite - datetime.now().date()).days
+            fecha_actual_timestamp = pd.Timestamp(datetime.now())
+            dias_hasta_limite = (fecha_limite - fecha_actual_timestamp).days
+            
             dias_laborables_hasta_limite = 0
-            fecha_contador = datetime.now().date()
-
+            fecha_contador = fecha_actual_timestamp
+            
             # Contar días laborables hasta la fecha límite
             for _ in range(dias_hasta_limite):
-                fecha_contador += timedelta(days=1)
+                fecha_contador += pd.Timedelta(days=1)
                 # Verificar si es día hábil (no fin de semana ni feriado)
-                if fecha_contador.weekday() < 5 and fecha_contador not in [f.date() for f in feriados]:
+                if fecha_contador.weekday() < 5 and fecha_contador.date() not in [f.date() for f in feriados]:
                     dias_laborables_hasta_limite += 1
-
+            
             # Calcular registros diarios necesarios para cumplir la meta antes de la fecha límite
             registros_diarios_meta = registros_faltantes / dias_laborables_hasta_limite if dias_laborables_hasta_limite > 0 else 0
-
+            
             # Recomendación
             st.subheader("Para terminar antes del 25 de abril")
             st.metric(
