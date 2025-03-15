@@ -8,6 +8,7 @@ st.set_page_config(
 )
 
 # Ahora podemos importar el resto de módulos
+from paginas.pagina_infordub import mostrar_pagina_infordub
 from paginas.pagina_dub import mostrar_pagina_dub
 from paginas.pagina_fies import mostrar_pagina_fies
 from paginas.pagina_demografia import mostrar_pagina_demografia
@@ -43,23 +44,30 @@ st.markdown("""
 def main():
     st.title("Dashboard de Visualización de Datos DUB")
     
-    # Crear pestañas para la navegación
-    tab1, tab2, tab3, tab4 = st.tabs(["DUB","MAPA", "FIES", "DEMOGRAFÍA"])
+    # Crear pestañas para la navegación (ahora con 5 pestañas)
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["INFORDUB", "DUB", "MAPA", "FIES", "DEMOGRAFÍA"])
     
     # Contenido para cada pestaña
     with tab1:
-        # Guardar el dataframe en session_state para compartirlo entre pestañas
-        df = mostrar_pagina_dub()
-        if df is not None:
+        # La nueva pestaña INFORDUB
+        df = mostrar_pagina_infordub()
+        if df is not None and 'df' not in st.session_state:
             st.session_state.df = df
     
     with tab2:
-        mostrar_mapa()
+        # Esta pestaña ahora solo mostrará el contenido demográfico
+        mostrar_pagina_dub()
     
     with tab3:
-        mostrar_pagina_fies()
+        # Mapa
+        mostrar_mapa()
     
     with tab4:
+        # FIES
+        mostrar_pagina_fies()
+    
+    with tab5:
+        # DEMOGRAFÍA
         mostrar_pagina_demografia()
     
     # Agregar pie de página
