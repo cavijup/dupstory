@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+import plotly.express as px
 from google_connection import load_data
 from graficos.grafico_dub import crear_grafico_dub
 from graficos.grafico_fechas import crear_grafico_fechas
@@ -82,13 +83,26 @@ def crear_analisis_proyeccion(df):
             # Calcular media móvil de 7 días
             registros_grafico['Media móvil'] = registros_grafico['Registros'].rolling(window=7, min_periods=1).mean()
             
-            # Crear gráfico
-            chart_data = pd.DataFrame({
-                'Registros diarios': registros_grafico['Registros'],
-                'Media móvil (7 días)': registros_grafico['Media móvil']
-            }, index=registros_grafico['Fecha'])
+            # Crear gráfico con Plotly
+            fig = px.line(
+                registros_grafico, 
+                x='Fecha', 
+                y=['Registros', 'Media móvil'],
+                title='Tendencia de registros diarios',
+                labels={'value': 'Cantidad', 'variable': 'Serie'},
+                color_discrete_sequence=['#1f77b4', '#ff7f0e']
+            )
             
-            st.line_chart(chart_data)
+            # Personalizar diseño
+            fig.update_layout(
+                xaxis_title='Fecha',
+                yaxis_title='Cantidad de registros',
+                legend_title='',
+                hovermode='x unified'
+            )
+            
+            # Mostrar el gráfico
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             st.subheader("Proyección")
