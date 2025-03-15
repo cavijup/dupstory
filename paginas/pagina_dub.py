@@ -5,7 +5,7 @@ from graficos.grafico_fechas import crear_grafico_fechas
 from utils.svg_utils import mostrar_estadisticas_sexo
 from graficos.graficos_adicionales import crear_grafico_pastel, crear_grafico_barras_horizontal, mostrar_graficos_pastel, mostrar_matriz_graficos_barras
 # Importar la función plotly_events directamente
-
+from utils.plotly_events import plotly_events
 
 def mostrar_pagina_dub():
     """
