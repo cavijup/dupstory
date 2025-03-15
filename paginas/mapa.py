@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import re
 import numpy as np
+from google_connection import load_data
 
 def extraer_coordenadas(ubicacion):
     """
@@ -53,6 +54,42 @@ def limpiar_nombre_comedor(nombre):
     # Si está vacío, devolver "Desconocido"
     return nombre_limpio if nombre_limpio else "Desconocido"
 
+def cargar_info_comedores():
+    """
+    Carga la información de la tabla COMEDORES.
+    
+    Returns:
+        DataFrame con la información de comedores y sus cupos
+    """
+    try:
+        # Usar el mismo sheet_id que para la tabla DUB
+        sheet_id = "16jdYbgDidCSxYv3JRzWgmM2POxUn9cw6xVRYmfSMqhU"
+        df_comedores = load_data(sheet_id, "COMEDORES")
+        
+        if df_comedores is not None and not df_comedores.empty:
+            # Verificar si tiene las columnas correctas, o buscar por posición
+            if 'Nombre_comedor' not in df_comedores.columns and len(df_comedores.columns) > 1:
+                # Suponemos que la columna B (índice 1) contiene los nombres
+                df_comedores['Nombre_comedor'] = df_comedores.iloc[:, 1]
+            
+            if 'Cupos' not in df_comedores.columns and len(df_comedores.columns) > 3:
+                # Suponemos que la columna D (índice 3) contiene los cupos
+                df_comedores['Cupos'] = df_comedores.iloc[:, 3]
+                
+                # Convertir cupos a numérico
+                df_comedores['Cupos'] = pd.to_numeric(df_comedores['Cupos'], errors='coerce')
+            
+            # Limpiar nombres de comedores para facilitar la comparación
+            df_comedores['Nombre_comedor_limpio'] = df_comedores['Nombre_comedor'].apply(limpiar_nombre_comedor)
+            
+            return df_comedores
+        else:
+            st.warning("No se pudo cargar la información de COMEDORES")
+            return None
+    except Exception as e:
+        st.warning(f"Error al cargar información de COMEDORES: {e}")
+        return None
+
 def crear_mapa(df):
     """
     Crea y muestra un mapa con las ubicaciones de los comedores.
@@ -64,6 +101,11 @@ def crear_mapa(df):
     
     # Crear una copia para no modificar el original
     df_temp = df.copy()
+    
+    # Cargar información de comedores y cupos
+    df_comedores = cargar_info_comedores()
+    if df_comedores is not None:
+        st.success(f"Información de comedores cargada: {len(df_comedores)} comedores con información de cupos")
     
     # Verificar si existen las columnas necesarias
     columnas_requeridas = ["UBICACION_PREDEFINIDA", "Nombre_comedor", "Se_reconoce_como"]
@@ -135,23 +177,45 @@ def crear_mapa(df):
         # Contar distribución étnica
         etnia_counts = group['Se_reconoce_como'].value_counts().to_dict()
         
+        # Buscar cupos para este comedor si la información está disponible
+        cupos = None
+        porcentaje_cupos = None
+        
+        if df_comedores is not None:
+            # Buscar coincidencia por nombre
+            comedores_match = df_comedores[df_comedores['Nombre_comedor_limpio'] == comedor]
+            if not comedores_match.empty:
+                # Tomar el primer match si hay varios
+                cupos = comedores_match['Cupos'].iloc[0]
+                if pd.notna(cupos) and cupos > 0:
+                    porcentaje_cupos = (len(group) / cupos) * 100
+        
         # Agregar a la lista de resultados
         grouped_data.append({
             'Comedor': comedor,
             'lat': lat,
             'lon': lon,
             'Conteo': len(group),
-            'Distribución_étnica': etnia_counts
+            'Distribución_étnica': etnia_counts,
+            'Cupos': cupos,
+            'Porcentaje_cupos': porcentaje_cupos
         })
     
     # Crear dataframe con los datos agrupados
     agrupado = pd.DataFrame(grouped_data)
     
-    # Crear texto para hover con distribución étnica
+    # Crear texto para hover con distribución étnica y porcentaje de cupos
     def crear_texto_hover(row):
         texto = f"<b>{row['Comedor']}</b><br>"
-        texto += f"Registros: {row['Conteo']}<br><br>"
-        texto += "<b>Distribución étnica:</b><br>"
+        texto += f"Registros: {row['Conteo']}<br>"
+        
+        # Agregar información de cupos si está disponible
+        if pd.notna(row['Cupos']):
+            texto += f"Cupos disponibles: {int(row['Cupos'])}<br>"
+            if pd.notna(row['Porcentaje_cupos']):
+                texto += f"Porcentaje ocupado: {row['Porcentaje_cupos']:.1f}%<br>"
+        
+        texto += "<br><b>Distribución étnica:</b><br>"
         
         # Ordenar distribución étnica de mayor a menor
         distribucion = row['Distribución_étnica']
@@ -176,6 +240,12 @@ def crear_mapa(df):
         default=comedores_unicos[:5] if len(comedores_unicos) > 5 else comedores_unicos
     )
     
+    # Filtro adicional para mostrar solo comedores con información de cupos
+    if df_comedores is not None:
+        mostrar_solo_con_cupos = st.sidebar.checkbox("Mostrar solo comedores con información de cupos", value=False)
+        if mostrar_solo_con_cupos:
+            agrupado = agrupado.dropna(subset=['Cupos'])
+    
     # Aplicar filtros
     if comedores_seleccionados:
         agrupado_filtrado = agrupado[agrupado['Comedor'].isin(comedores_seleccionados)]
@@ -191,8 +261,8 @@ def crear_mapa(df):
         hover_name="Comedor",
         hover_data={"lat": False, "lon": False, "Conteo": False, "hover_text": True},
         custom_data=["hover_text"],
-        color="Conteo",
-        color_continuous_scale="Viridis",
+        color="Porcentaje_cupos" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Conteo",
+        color_continuous_scale="RdYlGn" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Viridis",
         size_max=25,
         zoom=11,
         title="Mapa de Comedores por Ubicación"
@@ -213,7 +283,10 @@ def crear_mapa(df):
             ),
         ),
         height=700,
-        margin={"r": 0, "t": 50, "l": 0, "b": 0}
+        margin={"r": 0, "t": 50, "l": 0, "b": 0},
+        coloraxis_colorbar=dict(
+            title="% de Cupos" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Registros"
+        )
     )
     
     # Mostrar estadísticas generales
@@ -232,11 +305,18 @@ def crear_mapa(df):
         )
     
     with col3:
-        promedio = agrupado_filtrado['Conteo'].mean() if not agrupado_filtrado.empty else 0
-        st.metric(
-            label="Promedio por Ubicación",
-            value=f"{promedio:.1f}"
-        )
+        if 'Porcentaje_cupos' in agrupado_filtrado.columns and not agrupado_filtrado['Porcentaje_cupos'].isna().all():
+            promedio_porcentaje = agrupado_filtrado['Porcentaje_cupos'].mean()
+            st.metric(
+                label="Promedio % de Cupos",
+                value=f"{promedio_porcentaje:.1f}%"
+            )
+        else:
+            promedio = agrupado_filtrado['Conteo'].mean() if not agrupado_filtrado.empty else 0
+            st.metric(
+                label="Promedio por Ubicación",
+                value=f"{promedio:.1f}"
+            )
     
     # Mostrar mapa
     st.plotly_chart(fig, use_container_width=True)
@@ -246,16 +326,58 @@ def crear_mapa(df):
     
     # Preparar tabla resumida para mostrar
     if not agrupado_filtrado.empty:
-        tabla_resumen = agrupado_filtrado[['Comedor', 'Conteo']].copy()
-        tabla_resumen['Porcentaje'] = (tabla_resumen['Conteo'] / tabla_resumen['Conteo'].sum() * 100).round(2)
-        tabla_resumen['Porcentaje'] = tabla_resumen['Porcentaje'].astype(str) + '%'
-        tabla_resumen = tabla_resumen.sort_values('Conteo', ascending=False)
+        # Seleccionar columnas para la tabla
+        columnas_tabla = ['Comedor', 'Conteo']
+        
+        # Agregar columnas de cupos si están disponibles
+        if 'Cupos' in agrupado_filtrado.columns and not agrupado_filtrado['Cupos'].isna().all():
+            columnas_tabla.extend(['Cupos', 'Porcentaje_cupos'])
+        
+        tabla_resumen = agrupado_filtrado[columnas_tabla].copy()
+        
+        # Calcular porcentaje del total
+        tabla_resumen['Porcentaje_del_total'] = (tabla_resumen['Conteo'] / tabla_resumen['Conteo'].sum() * 100).round(2)
+        
+        # Formatear porcentajes
+        if 'Porcentaje_cupos' in tabla_resumen.columns:
+            tabla_resumen['Porcentaje_cupos'] = tabla_resumen['Porcentaje_cupos'].apply(
+                lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A"
+            )
+        
+        tabla_resumen['Porcentaje_del_total'] = tabla_resumen['Porcentaje_del_total'].astype(str) + '%'
         
         # Formatear números con separador de miles
         tabla_resumen['Conteo'] = tabla_resumen['Conteo'].apply(lambda x: f"{x:,}")
         
+        if 'Cupos' in tabla_resumen.columns:
+            tabla_resumen['Cupos'] = tabla_resumen['Cupos'].apply(
+                lambda x: f"{int(x):,}" if pd.notna(x) else "N/A"
+            )
+        
+        # Ordenar por conteo descendente
+        tabla_resumen = tabla_resumen.sort_values('Conteo', ascending=False, key=lambda x: pd.to_numeric(x.str.replace(',', ''), errors='coerce'))
+        
+        # Renombrar columnas para mejor visualización
+        nuevos_nombres = {
+            'Comedor': 'Comedor',
+            'Conteo': 'Registros',
+            'Cupos': 'Cupos Totales',
+            'Porcentaje_cupos': '% de Cupos Ocupados',
+            'Porcentaje_del_total': '% del Total de Registros'
+        }
+        
+        tabla_resumen = tabla_resumen.rename(columns=nuevos_nombres)
+        
         # Mostrar tabla
         st.dataframe(tabla_resumen, use_container_width=True)
+        
+        # Mostrar información adicional si hay datos de cupos
+        if 'Cupos Totales' in tabla_resumen.columns:
+            # Contar comedores con y sin información
+            total_comedores = len(tabla_resumen)
+            comedores_con_info = tabla_resumen['Cupos Totales'].apply(lambda x: x != "N/A").sum()
+            
+            st.info(f"{comedores_con_info} de {total_comedores} comedores tienen información de cupos disponibles ({comedores_con_info/total_comedores*100:.1f}%)")
     else:
         st.info("No hay datos para mostrar en la tabla de resumen.")
 
