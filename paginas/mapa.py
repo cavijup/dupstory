@@ -238,7 +238,7 @@ def crear_mapa(df):
     comedores_seleccionados = st.sidebar.multiselect(
         "Filtrar por comedores:", 
         comedores_unicos,
-        default=comedores_unicos[:5] if len(comedores_unicos) > 5 else comedores_unicos
+        default=comedores_unicos 
     )
     
     # Filtro adicional para mostrar solo comedores con información de cupos
