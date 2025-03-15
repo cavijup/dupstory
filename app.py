@@ -39,12 +39,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Función principal de la aplicación
 def main():
     st.title("Dashboard de Visualización de Datos DUB")
     
-    # Crear pestañas para la navegación
-    tab1, tab2, tab3, tab4 = st.tabs(["DUB", "FIES", "DEMOGRAFÍA", "MAPA"])
+    # Crear pestañas para la navegación con MAPA justo después de DUB
+    tab1, tab4, tab2, tab3 = st.tabs(["DUB", "MAPA", "FIES", "DEMOGRAFÍA"])
     
     # Contenido para cada pestaña
     with tab1:
@@ -53,18 +52,15 @@ def main():
         if df is not None:
             st.session_state.df = df
     
+    with tab4:
+        mostrar_mapa()
+        
     with tab2:
         mostrar_pagina_fies()
     
     with tab3:
         mostrar_pagina_demografia()
     
-    with tab4:
-        mostrar_mapa()
-    
     # Agregar pie de página
     st.markdown("---")
     st.caption("Desarrollado con Streamlit • Datos actualizados desde Google Sheets")
-
-if __name__ == "__main__":
-    main()

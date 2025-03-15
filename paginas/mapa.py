@@ -82,14 +82,7 @@ def cargar_info_comedores():
             # Limpiar nombres de comedores para facilitar la comparación
             df_comedores['Nombre_comedor_limpio'] = df_comedores['Nombre_comedor'].apply(limpiar_nombre_comedor)
             
-            # Ahora que todas las columnas existen, mostrar la muestra
             st.success(f"Información de comedores cargada: {len(df_comedores)} comedores con información de cupos")
-            
-            # Mostrar muestra de comedores cargados con sus cupos
-            with st.expander("Ver muestra de comedores y cupos"):
-                st.write("Muestra de comedores disponibles en la tabla COMEDORES:")
-                st.dataframe(df_comedores[['Nombre_comedor', 'Cupos', 'Nombre_comedor_limpio']].head(10))
-            
             return df_comedores
         else:
             st.warning("No se pudo cargar la información de COMEDORES")
