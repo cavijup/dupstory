@@ -79,12 +79,6 @@ def cargar_info_comedores():
                 # Convertir cupos a numérico
                 df_comedores['Cupos'] = pd.to_numeric(df_comedores['Cupos'], errors='coerce')
             
-            # Limpiar nombres de comedores para facilitar la comparación
-            df_comedores['Nombre_comedor_limpio'] = df_comedores['Nombre_comedor'].apply(limpiar_nombre_comedor)
-            
-            st.success(f"Información de comedores cargada: {len(df_comedores)} comedores con información de cupos")
-            return df_comedores
-        else:
             st.warning("No se pudo cargar la información de COMEDORES")
             return None
     except Exception as e:
