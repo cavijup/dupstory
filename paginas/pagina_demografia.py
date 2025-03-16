@@ -71,7 +71,7 @@ def mostrar_pagina_demografia():
         "NO CONSUMÍ FRUTAS NI VERDURAS": "#FFEB3B", # Amarillo
         "NO SABE NO RESPONDE": "#9E9E9E",         # Gris
         "TODOS LOS DÍAS": "#2E7D32",              # Verde oscuro
-        "1 VEZ En LA SEMANA": "#FF9800",           # Naranja
+        "1 VEZ EN LA SEMANA": "#ea00ff",          # Naranja
         "DIARIO": "#2E7D32",                      # Verde oscuro (alternativo)
         "SEMANAL": "#8BC34A",                     # Verde claro (alternativo)
         "QUINCENAL": "#CDDC39",                   # Lima
