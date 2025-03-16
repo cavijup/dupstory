@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import os
 
-def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion_columna=None):
+def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion_columna=None, mostrar_leyenda=False):
     """
     Crea un gráfico de pastel con una imagen relacionada arriba.
     
@@ -13,6 +13,7 @@ def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion
         titulo: Título a mostrar para el gráfico
         imagen_nombre: Nombre del archivo de imagen (sin extensión)
         posicion_columna: Índice de la columna si no se encuentra por nombre
+        mostrar_leyenda: Si es True, muestra la leyenda del gráfico
     """
     # Intentar acceder a la columna por nombre o posición
     datos = None
@@ -45,13 +46,13 @@ def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion
     porcentajes = (conteo / total * 100).round(1)
     
     # Crear etiquetas con porcentajes
-    etiquetas = [f"{idx} ({val:.1f}%)" for idx, val in zip(conteo.index, porcentajes)]
+    etiquetas = [f"{idx}" for idx in conteo.index]
     
     # Crear gráfico de pastel con Plotly
     fig = px.pie(
         values=conteo.values,
         names=etiquetas,
-        title=f"Distribución de {titulo}",
+        title=None,
         color_discrete_sequence=px.colors.qualitative.Set3,
     )
     
@@ -67,17 +68,25 @@ def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion
     fig.update_layout(
         height=300,
         margin=dict(l=20, r=20, t=40, b=20),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5
-        )
+        showlegend=mostrar_leyenda
     )
+    
+    # Si es gráfico con leyenda, ajustar posición de la leyenda
+    if mostrar_leyenda:
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.2,
+                xanchor="center",
+                x=0.5
+            )
+        )
     
     # Mostrar el gráfico
     st.plotly_chart(fig, use_container_width=True)
+    
+    return conteo
 
 def mostrar_pagina_demografia():
     """
@@ -144,6 +153,38 @@ def mostrar_pagina_demografia():
     # Crear dos filas, cada una con tres columnas
     st.subheader("Consumo de Proteínas y Alimentos")
     
+    # Obtener todas las categorías únicas de respuestas para la convención
+    all_categories = set()
+    for col_name, col_pos in posiciones.items():
+        if col_name in df.columns:
+            all_categories.update(df[col_name].dropna().unique())
+        elif len(df.columns) > col_pos:
+            all_categories.update(df.iloc[:, col_pos].dropna().unique())
+    
+    # Crear una tabla explicativa para la convención
+    st.markdown("### Convenciones")
+    st.write("Las siguientes categorías aparecen en los gráficos de consumo alimentario:")
+    
+    # Crear un dataframe con las categorías y sus descripciones
+    category_descriptions = {
+        "DIARIO": "Consumo todos los días",
+        "SEMANAL": "Consumo algunas veces por semana",
+        "QUINCENAL": "Consumo aproximadamente cada 15 días",
+        "MENSUAL": "Consumo aproximadamente una vez al mes",
+        "OCASIONAL": "Consumo rara vez o en ocasiones especiales",
+        "NO CONSUME": "No consume este tipo de alimento"
+    }
+    
+    # Mostrar las descripciones en forma de tabla
+    categorias_data = []
+    for cat in sorted(all_categories):
+        if pd.notna(cat) and cat.strip():
+            desc = category_descriptions.get(cat, "Sin descripción disponible")
+            categorias_data.append({"Categoría": cat, "Descripción": desc})
+    
+    if categorias_data:
+        st.table(pd.DataFrame(categorias_data))
+    
     # Primera fila
     st.markdown("### Consumo de Proteínas")
     col1, col2, col3 = st.columns(3)
@@ -154,7 +195,8 @@ def mostrar_pagina_demografia():
             'carnes_rojas', 
             titulos['carnes_rojas'], 
             imagenes['carnes_rojas'], 
-            posiciones['carnes_rojas']
+            posiciones['carnes_rojas'],
+            mostrar_leyenda=False
         )
     
     with col2:
@@ -163,7 +205,8 @@ def mostrar_pagina_demografia():
             'Pollo', 
             titulos['Pollo'], 
             imagenes['Pollo'], 
-            posiciones['Pollo']
+            posiciones['Pollo'],
+            mostrar_leyenda=False
         )
     
     with col3:
@@ -172,7 +215,8 @@ def mostrar_pagina_demografia():
             'Pescado', 
             titulos['Pescado'], 
             imagenes['Pescado'], 
-            posiciones['Pescado']
+            posiciones['Pescado'],
+            mostrar_leyenda=False
         )
     
     # Segunda fila
@@ -185,7 +229,8 @@ def mostrar_pagina_demografia():
             'Huevo', 
             titulos['Huevo'], 
             imagenes['Huevo'], 
-            posiciones['Huevo']
+            posiciones['Huevo'],
+            mostrar_leyenda=False
         )
     
     with col2:
@@ -194,7 +239,8 @@ def mostrar_pagina_demografia():
             'Consumo_frutas_verduras', 
             titulos['Consumo_frutas_verduras'], 
             imagenes['Consumo_frutas_verduras'], 
-            posiciones['Consumo_frutas_verduras']
+            posiciones['Consumo_frutas_verduras'],
+            mostrar_leyenda=False
         )
     
     with col3:
@@ -203,18 +249,99 @@ def mostrar_pagina_demografia():
             'Consumo_lácteos', 
             titulos['Consumo_lácteos'], 
             imagenes['Consumo_lácteos'], 
-            posiciones['Consumo_lácteos']
+            posiciones['Consumo_lácteos'],
+            mostrar_leyenda=False
         )
     
     # Agregar información adicional
     st.markdown("---")
-    st.markdown("""
-    ### Interpretación de los datos
     
-    Esta visualización muestra la distribución de la frecuencia de consumo de diferentes grupos de alimentos 
-    entre los beneficiarios registrados en el sistema DUB. Los gráficos permiten identificar patrones 
-    de consumo alimentario que pueden ser útiles para la planificación de programas nutricionales.
-    """)
+    # Crear resumen estadístico
+    st.markdown("### Resumen Estadístico")
+    
+    # Crear un mapa de colores para las categorías
+    color_map = {
+        "DIARIO": "#1f77b4",    # Azul oscuro
+        "SEMANAL": "#2ca02c",   # Verde
+        "QUINCENAL": "#ff7f0e", # Naranja
+        "MENSUAL": "#d62728",   # Rojo
+        "OCASIONAL": "#9467bd", # Púrpura
+        "NO CONSUME": "#7f7f7f" # Gris
+    }
+    
+    # Preparar datos para el resumen
+    consumo_data = {}
+    for col_name, col_pos in posiciones.items():
+        conteo = None
+        if col_name in df.columns:
+            conteo = df[col_name].value_counts()
+        elif len(df.columns) > col_pos:
+            columnas = list(df.columns)
+            conteo = df[columnas[col_pos]].value_counts()
+            
+        if conteo is not None:
+            consumo_data[titulos[col_name]] = conteo
+    
+    # Crear dos columnas para la visualización
+    col1, col2 = st.columns([3, 2])
+    
+    with col1:
+        # Crear gráfico de resumen
+        if consumo_data:
+            st.markdown("#### Comparativa de patrones de consumo")
+            
+            # Convertir los datos a un formato adecuado para visualización
+            summary_data = []
+            for alimento, conteo in consumo_data.items():
+                total = conteo.sum()
+                for categoria, valor in conteo.items():
+                    if pd.notna(categoria) and categoria.strip():
+                        porcentaje = (valor / total * 100).round(1)
+                        summary_data.append({
+                            "Alimento": alimento,
+                            "Categoría": categoria,
+                            "Porcentaje": porcentaje
+                        })
+            
+            if summary_data:
+                summary_df = pd.DataFrame(summary_data)
+                
+                # Crear gráfico de barras agrupadas
+                fig = px.bar(
+                    summary_df,
+                    x="Alimento",
+                    y="Porcentaje",
+                    color="Categoría",
+                    barmode="group",
+                    color_discrete_map=color_map,
+                    title="Comparativa de frecuencia de consumo por tipo de alimento"
+                )
+                
+                fig.update_layout(
+                    xaxis_title="Tipo de Alimento",
+                    yaxis_title="Porcentaje (%)",
+                    legend_title="Frecuencia de Consumo",
+                    height=400
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("#### Conclusiones")
+        st.markdown("""
+        Esta visualización muestra la distribución de la frecuencia de consumo de diferentes grupos de alimentos 
+        entre los beneficiarios registrados en el sistema DUB. Los gráficos permiten identificar patrones 
+        de consumo alimentario que pueden ser útiles para la planificación de programas nutricionales.
+        
+        Aspectos a considerar:
+        
+        - La frecuencia de consumo de proteínas animales
+        - El consumo regular de frutas y verduras
+        - La ingesta de lácteos y su relación con la nutrición
+        
+        Estos datos pueden usarse para orientar acciones específicas en los comedores comunitarios y programas 
+        de seguridad alimentaria.
+        """)
 
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
