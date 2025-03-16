@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import os
 
 def mostrar_pagina_demografia():
@@ -126,114 +124,42 @@ def mostrar_pagina_demografia():
         # Convertir los datos a un formato adecuado para visualización
         summary_data = []
         for alimento, conteo in consumo_data.items():
-            # Obtener la clave del alimento para buscar en el diccionario de imágenes
-            alimento_key = [k for k, v in titulos.items() if v == alimento]
-            if alimento_key:
-                img_name = imagenes.get(alimento_key[0], "")
-            else:
-                img_name = ""
-                
             total = conteo.sum()
             for categoria, valor in conteo.items():
                 if pd.notna(categoria) and categoria.strip() and selected_categories.get(categoria, False):
                     porcentaje = (valor / total * 100).round(1)
                     summary_data.append({
                         "Alimento": alimento,
-                        "Imagen": img_name,
                         "Categoría": categoria,
                         "Porcentaje": porcentaje
                     })
         
         if summary_data:
-            # Crear DataFrame
             summary_df = pd.DataFrame(summary_data)
             
-            # Ahora vamos a crear un gráfico personalizado usando Plotly Graph Objects
-            # para poder incluir imágenes en las etiquetas del eje X
+            # Crear gráfico de barras agrupadas
+            fig = px.bar(
+                summary_df,
+                x="Alimento",
+                y="Porcentaje",
+                color="Categoría",
+                barmode="group",
+                color_discrete_map=color_map,
+                title="Comparativa de frecuencia de consumo por tipo de alimento"
+            )
             
-            # Obtener alimentos únicos para el eje X
-            alimentos_unicos = sorted(summary_df['Alimento'].unique())
-            
-            # Obtener categorías únicas para colores
-            categorias_unicas = sorted(summary_df['Categoría'].unique())
-            
-            # Crear figura
-            fig = go.Figure()
-            
-            # Ancho de barra y espacio entre grupos
-            bar_width = 0.15
-            group_spacing = 0.1
-            
-            # Para cada categoría, agregar una traza de barras
-            for i, categoria in enumerate(categorias_unicas):
-                # Filtrar datos para esta categoría
-                datos_categoria = summary_df[summary_df['Categoría'] == categoria]
-                
-                # Crear una serie con valores para todos los alimentos
-                valores = []
-                for alimento in alimentos_unicos:
-                    fila = datos_categoria[datos_categoria['Alimento'] == alimento]
-                    if not fila.empty:
-                        valores.append(fila['Porcentaje'].values[0])
-                    else:
-                        valores.append(0)
-                
-                # Calcular la posición x de cada barra
-                posiciones_x = []
-                for j in range(len(alimentos_unicos)):
-                    # Ajustar posición para cada categoría dentro del grupo
-                    pos = j + (i - len(categorias_unicas)/2 + 0.5) * (bar_width + group_spacing)
-                    posiciones_x.append(pos)
-                
-                # Añadir traza de barras para esta categoría
-                fig.add_trace(go.Bar(
-                    x=posiciones_x,
-                    y=valores,
-                    name=categoria,
-                    marker_color=color_map.get(categoria, "#808080"),
-                    width=bar_width
-                ))
-            
-            # Configurar el diseño
             fig.update_layout(
-                title="Comparativa de frecuencia de consumo por tipo de alimento",
-                xaxis=dict(
-                    tickvals=list(range(len(alimentos_unicos))),
-                    ticktext=alimentos_unicos,
-                    title="Tipo de Alimento",
-                ),
-                yaxis=dict(title="Porcentaje (%)"),
+                xaxis_title="Tipo de Alimento",
+                yaxis_title="Porcentaje (%)",
                 legend_title="Frecuencia de Consumo",
-                height=500,
-                barmode='group',
+                height=450,
                 margin=dict(l=20, r=20, t=50, b=100)
             )
             
-            # Añadir anotaciones con imágenes debajo del eje X
-            for i, alimento in enumerate(alimentos_unicos):
-                # Obtener el nombre de la imagen
-                img_name = summary_df[summary_df['Alimento'] == alimento]['Imagen'].iloc[0]
-                
-                if img_name:
-                    # Crear texto con el nombre del alimento para el tooltip
-                    fig.add_annotation(
-                        x=i,
-                        y=-10,  # Posición bajo el eje
-                        text=f'<img src="/api/placeholder/50/50" alt="{img_name}" style="width:40px;height:40px;">',
-                        showarrow=False,
-                        yshift=-55,
-                        xanchor='center',
-                        yanchor='top',
-                        font=dict(size=10),
-                        hovertext=alimento,
-                        hoverlabel=dict(font_size=12)
-                    )
+            # Rotar etiquetas del eje x para mejor legibilidad
+            fig.update_xaxes(tickangle=45)
             
-            # Mostrar gráfico
             st.plotly_chart(fig, use_container_width=True)
-            
-            # Explicación adicional
-            st.info("Nota: Se han utilizado imágenes representativas debajo de las etiquetas de los alimentos. Pase el cursor sobre las imágenes para ver el nombre completo del alimento.")
     
     # SEGUNDA FILA: Métricas destacadas y Conclusiones con referencias
     col1, col2 = st.columns(2)
