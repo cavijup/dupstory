@@ -167,7 +167,7 @@ def mostrar_pagina_demografia():
 
     # Primera columna: Primeras 3 métricas
     with col1:
-        st.markdown("### Métricas Grupo 1")
+        st.markdown("### métricas importantes ")
         
         try:
             # Calcular algunas métricas importantes
@@ -210,7 +210,7 @@ def mostrar_pagina_demografia():
 
     # Segunda columna: Otras 3 métricas
     with col2:
-        st.markdown("### Métricas Grupo 2")
+        st.markdown(" ")
         
         try:
             # Usar las métricas ya calculadas
