@@ -77,7 +77,7 @@ def crear_analisis_proyeccion(df):
             registros_grafico = registros_por_dia.sort_values('Fecha')
             
             # Calcular media móvil de 7 días
-            registros_grafico['Media móvil'] = registros_grafico['Registros'].rolling(window=7, min_periods=1).mean()
+            registros_grafico['Media móvil'] = registros_grafico['Registros'].rolling(window=5, min_periods=1).mean()
             
             # Crear gráfico con Plotly
             fig = px.line(
