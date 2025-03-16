@@ -262,7 +262,7 @@ def mostrar_pagina_demografia():
 
     # Tercera columna: Conclusiones (mantener como estaba)
     with col3:
-        st.markdown("### Conclusiones")        
+                
         st.markdown("""
         #### Patrones de Consumo Alimentario
         
