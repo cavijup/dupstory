@@ -162,70 +162,12 @@ def mostrar_pagina_demografia():
             st.plotly_chart(fig, use_container_width=True)
     
     # SEGUNDA FILA: Métricas destacadas y Conclusiones con referencias
-    col1, col2 = st.columns(2)    
-    
-    st.markdown("### Métricas Destacadas")
-    
-    try:
-        # Calcular algunas métricas importantes
-        metricas = []
-        for col_name, col_pos in posiciones.items():
-            if col_name in df.columns:
-                serie = df[col_name]
-            elif len(df.columns) > col_pos:
-                columnas = list(df.columns)
-                serie = df[columnas[col_pos]]
-            else:
-                continue
-                
-            # Calcular porcentaje de consumo diario (usando diversas etiquetas posibles)
-            consumo_diario = serie.isin(["TODOS LOS DÍAS", "DIARIO"]).mean() * 100
-            if consumo_diario > 0:  # Solo agregar si hay datos
-                metricas.append((titulos[col_name], "Consumo diario", consumo_diario))
-            
-            # Calcular porcentaje de consumo frecuente
-            consumo_frecuente = serie.isin(["TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"]).mean() * 100
-            if consumo_frecuente > 0:  # Solo agregar si hay datos
-                metricas.append((titulos[col_name], "Consumo frecuente", consumo_frecuente))
-            
-            # Calcular porcentaje de no consumo (usando diversas etiquetas posibles)
-            no_consumo = serie.isin(["NO CONSUME", "NO CONSUMI ESTE ALIMENTO"]).mean() * 100
-            if no_consumo > 0:  # Solo agregar si hay datos
-                metricas.append((titulos[col_name], "No consume", no_consumo))
-        
-        # Mostrar las métricas más destacadas
-        if metricas:
-            metricas_ordenadas = sorted(metricas, key=lambda x: x[2], reverse=True)
-            
-            # Crear dos columnas dentro de la columna principal
-            subcol1, subcol2 = st.columns(2)
-            
-            # Mostrar métricas de consumo diario en la primera subcolumna
-            with subcol1:
-                st.subheader("Consumo Diario")
-                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "Consumo diario"][:3]:
-                    st.metric(
-                        label=f"{alimento}",
-                        value=f"{valor:.1f}%",
-                        delta="↑",
-                        delta_color="normal"
-                    )
-            
-            # Mostrar métricas de no consumo en la segunda subcolumna
-            with subcol2:
-                st.subheader("No Consumo")
-                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "No consume"][:3]:
-                    st.metric(
-                        label=f"{alimento}",
-                        value=f"{valor:.1f}%",
-                        delta="↓",
-                        delta_color="off"
-                    )
-        else:
-            st.info("No hay suficientes datos para mostrar métricas destacadas.")
-    except Exception as e:
-        st.warning(f"No se pudieron calcular las métricas: {e}")
-        st.markdown("### Métricas Destacadas")
+    # Cambiar la estructura para tener 3 columnas: dos para métricas (25% cada una) y una para conclusiones (50%)
+    col1, col2, col3 = st.columns([1, 1, 2])
+
+    # Primera columna: Primeras 3 métricas
+    with col1:
+        st.markdown("### Métricas Grupo 1")
         
         try:
             # Calcular algunas métricas importantes
@@ -248,17 +190,11 @@ def mostrar_pagina_demografia():
                 consumo_frecuente = serie.isin(["TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"]).mean() * 100
                 if consumo_frecuente > 0:  # Solo agregar si hay datos
                     metricas.append((titulos[col_name], "Consumo frecuente", consumo_frecuente))
-                
-                # Calcular porcentaje de no consumo (usando diversas etiquetas posibles)
-                no_consumo = serie.isin(["NO CONSUME", "NO CONSUMI ESTE ALIMENTO"]).mean() * 100
-                if no_consumo > 0:  # Solo agregar si hay datos
-                    metricas.append((titulos[col_name], "No consume", no_consumo))
             
-            # Mostrar las métricas más destacadas
+            # Mostrar métricas de consumo diario (primeras 3)
             if metricas:
                 metricas_ordenadas = sorted(metricas, key=lambda x: x[2], reverse=True)
                 
-                # Mostrar métricas de consumo diario
                 st.subheader("Consumo Diario")
                 for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "Consumo diario"][:3]:
                     st.metric(
@@ -267,22 +203,65 @@ def mostrar_pagina_demografia():
                         delta="↑",
                         delta_color="normal"
                     )
-                
-                # Mostrar métricas de no consumo
-                st.subheader("No Consumo")
-                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "No consume"][:3]:
-                    st.metric(
-                        label=f"{alimento}",
-                        value=f"{valor:.1f}%",
-                        delta="↓",
-                        delta_color="off"
-                    )
             else:
-                st.info("No hay suficientes datos para mostrar métricas destacadas.")
+                st.info("No hay datos para métricas de consumo diario.")
         except Exception as e:
             st.warning(f"No se pudieron calcular las métricas: {e}")
-    
+
+    # Segunda columna: Otras 3 métricas
     with col2:
+        st.markdown("### Métricas Grupo 2")
+        
+        try:
+            # Usar las métricas ya calculadas
+            if 'metricas' in locals() and metricas:
+                metricas_ordenadas = sorted(metricas, key=lambda x: x[2], reverse=True)
+                
+                # Calcular porcentaje de no consumo (si no se calculó antes)
+                if not any(m[1] == "No consume" for m in metricas):
+                    no_consumo_metricas = []
+                    for col_name, col_pos in posiciones.items():
+                        if col_name in df.columns:
+                            serie = df[col_name]
+                        elif len(df.columns) > col_pos:
+                            columnas = list(df.columns)
+                            serie = df[columnas[col_pos]]
+                        else:
+                            continue
+                            
+                        # Calcular porcentaje de no consumo
+                        no_consumo = serie.isin(["NO CONSUME", "NO CONSUMI ESTE ALIMENTO"]).mean() * 100
+                        if no_consumo > 0:  # Solo agregar si hay datos
+                            no_consumo_metricas.append((titulos[col_name], "No consume", no_consumo))
+                    
+                    # Ordenar y mostrar las métricas de no consumo
+                    no_consumo_ordenadas = sorted(no_consumo_metricas, key=lambda x: x[2], reverse=True)
+                    
+                    st.subheader("No Consumo")
+                    for alimento, tipo, valor in no_consumo_ordenadas[:3]:
+                        st.metric(
+                            label=f"{alimento}",
+                            value=f"{valor:.1f}%",
+                            delta="↓",
+                            delta_color="off"
+                        )
+                else:
+                    # Mostrar las métricas de consumo frecuente o secundarias
+                    st.subheader("Consumo Frecuente")
+                    for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "Consumo frecuente"][:3]:
+                        st.metric(
+                            label=f"{alimento}",
+                            value=f"{valor:.1f}%",
+                            delta="→",
+                            delta_color="normal"
+                        )
+            else:
+                st.info("No hay datos suficientes para mostrar métricas adicionales.")
+        except Exception as e:
+            st.warning(f"No se pudieron calcular las métricas adicionales: {e}")
+
+    # Tercera columna: Conclusiones (mantener como estaba)
+    with col3:
         st.markdown("### Conclusiones")        
         st.markdown("""
         #### Patrones de Consumo Alimentario
@@ -304,7 +283,7 @@ def mostrar_pagina_demografia():
         
         [³] Pérez-Rodrigo, C., et al. (2022). "Métodos de evaluación de la ingesta de alimentos: aplicaciones en estudios poblacionales". *Revista Española de Nutrición Comunitaria*, 28(2), 94-109.
         """)
-    
+        
     # TERCERA FILA: Tabla resumen
     st.markdown("### Tabla de Resumen")
     
