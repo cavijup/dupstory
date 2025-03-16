@@ -71,7 +71,7 @@ def mostrar_pagina_demografia():
         "NO CONSUMÍ FRUTAS NI VERDURAS": "#FFEB3B", # Amarillo
         "NO SABE NO RESPONDE": "#9E9E9E",         # Gris
         "TODOS LOS DÍAS": "#2E7D32",              # Verde oscuro
-        "1 VEZ A LA SEMANA": "#FF9800",           # Naranja
+        "1 VEZ En LA SEMANA": "#FF9800",           # Naranja
         "DIARIO": "#2E7D32",                      # Verde oscuro (alternativo)
         "SEMANAL": "#8BC34A",                     # Verde claro (alternativo)
         "QUINCENAL": "#CDDC39",                   # Lima
@@ -162,9 +162,69 @@ def mostrar_pagina_demografia():
             st.plotly_chart(fig, use_container_width=True)
     
     # SEGUNDA FILA: Métricas destacadas y Conclusiones con referencias
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)    
     
-    with col1:
+    st.markdown("### Métricas Destacadas")
+    
+    try:
+        # Calcular algunas métricas importantes
+        metricas = []
+        for col_name, col_pos in posiciones.items():
+            if col_name in df.columns:
+                serie = df[col_name]
+            elif len(df.columns) > col_pos:
+                columnas = list(df.columns)
+                serie = df[columnas[col_pos]]
+            else:
+                continue
+                
+            # Calcular porcentaje de consumo diario (usando diversas etiquetas posibles)
+            consumo_diario = serie.isin(["TODOS LOS DÍAS", "DIARIO"]).mean() * 100
+            if consumo_diario > 0:  # Solo agregar si hay datos
+                metricas.append((titulos[col_name], "Consumo diario", consumo_diario))
+            
+            # Calcular porcentaje de consumo frecuente
+            consumo_frecuente = serie.isin(["TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"]).mean() * 100
+            if consumo_frecuente > 0:  # Solo agregar si hay datos
+                metricas.append((titulos[col_name], "Consumo frecuente", consumo_frecuente))
+            
+            # Calcular porcentaje de no consumo (usando diversas etiquetas posibles)
+            no_consumo = serie.isin(["NO CONSUME", "NO CONSUMI ESTE ALIMENTO"]).mean() * 100
+            if no_consumo > 0:  # Solo agregar si hay datos
+                metricas.append((titulos[col_name], "No consume", no_consumo))
+        
+        # Mostrar las métricas más destacadas
+        if metricas:
+            metricas_ordenadas = sorted(metricas, key=lambda x: x[2], reverse=True)
+            
+            # Crear dos columnas dentro de la columna principal
+            subcol1, subcol2 = st.columns(2)
+            
+            # Mostrar métricas de consumo diario en la primera subcolumna
+            with subcol1:
+                st.subheader("Consumo Diario")
+                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "Consumo diario"][:3]:
+                    st.metric(
+                        label=f"{alimento}",
+                        value=f"{valor:.1f}%",
+                        delta="↑",
+                        delta_color="normal"
+                    )
+            
+            # Mostrar métricas de no consumo en la segunda subcolumna
+            with subcol2:
+                st.subheader("No Consumo")
+                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "No consume"][:3]:
+                    st.metric(
+                        label=f"{alimento}",
+                        value=f"{valor:.1f}%",
+                        delta="↓",
+                        delta_color="off"
+                    )
+        else:
+            st.info("No hay suficientes datos para mostrar métricas destacadas.")
+    except Exception as e:
+        st.warning(f"No se pudieron calcular las métricas: {e}")
         st.markdown("### Métricas Destacadas")
         
         try:
