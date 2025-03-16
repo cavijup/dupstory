@@ -102,7 +102,6 @@ def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion
     st.plotly_chart(fig, use_container_width=True)
     
     return conteo
-
 def mostrar_pagina_demografia():
     """
     Muestra el contenido de la pestaña DEMOGRAFÍA con visualizaciones
@@ -193,55 +192,37 @@ def mostrar_pagina_demografia():
     # Filtrar categorías vacías o nulas
     all_categories = [cat for cat in all_categories if pd.notna(cat) and str(cat).strip()]
     
-    # Crear sección de filtros con botones
-    st.markdown("### Filtros de Visualización")
-    st.write("Selecciona las categorías que deseas visualizar:")
+    # REEMPLAZO DEL SISTEMA DE FILTROS CON LEYENDA DE COLORES
+    st.markdown("### Leyenda de Colores para la Frecuencia de Consumo")
     
-    # Usar columnas para los botones de selección
+    # Crea columnas para mostrar las leyendas de colores
     cols = st.columns(3)
-    selected_categories = {}
-    
-    # Inicializar estado de sesión si no existe
-    if 'selected_categories' not in st.session_state:
-        st.session_state.selected_categories = {cat: True for cat in all_categories}
-    
-    # Crear botones de selección para cada categoría
     i = 0
-    for cat in sorted(all_categories):
+    
+    # Muestra cada categoría con su color correspondiente
+    for categoria in sorted(all_categories):
         with cols[i % 3]:
-            # Generar ID único para el checkbox (evitar caracteres no compatibles)
-            checkbox_id = f"cat_{i}_{cat.replace(' ', '_')}"
-            
-            # Mostrar checkbox
-            selected = st.checkbox(
-                cat, 
-                value=st.session_state.selected_categories.get(cat, True),
-                key=checkbox_id
-            )
-            
-            # Obtener color para la categoría
-            color = color_map.get(cat, "#808080")
-            
-            # Aplicar color con markdown (usando ID seguro)
+            color = color_map.get(categoria, "#808080")
             st.markdown(
                 f"""
-                <style>
-                div[data-testid="stCheckbox"] label:has(input[id="{checkbox_id}"]) {{
-                    background-color: {color}20; /* Color con 20% de opacidad */
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    border-left: 4px solid {color};
-                }}
-                </style>
-                """, 
+                <div style="
+                    background-color: {color};
+                    width: 20px;
+                    height: 20px;
+                    display: inline-block;
+                    margin-right: 10px;
+                    border-radius: 3px;
+                "></div>
+                <span style="vertical-align: middle">{categoria}</span>
+                """,
                 unsafe_allow_html=True
             )
-            
-            selected_categories[cat] = selected
         i += 1
     
-    # Actualizar estado de sesión
+    # En la variable selected_categories, todas las categorías están seleccionadas
+    selected_categories = {cat: True for cat in all_categories}
     st.session_state.selected_categories = selected_categories
+    
     # Primera fila de gráficos
     st.markdown("### Consumo de Proteínas")
     col1, col2, col3 = st.columns(3)
@@ -431,28 +412,7 @@ def mostrar_pagina_demografia():
         Estos datos pueden usarse para orientar acciones específicas en los comedores comunitarios y programas 
         de seguridad alimentaria.
         """)
-        
-        # Agregar indicadores visuales para las categorías
-        st.markdown("#### Leyenda de Colores")
-        
-        for categoria, seleccionada in selected_categories.items():
-            if seleccionada:
-                color = color_map.get(categoria, "#808080")
-                st.markdown(
-                    f"""
-                    <div style="
-                        background-color: {color};
-                        width: 20px;
-                        height: 20px;
-                        display: inline-block;
-                        margin-right: 10px;
-                        border-radius: 3px;
-                    "></div>
-                    <span style="vertical-align: middle">{categoria}</span>
-                    """,
-                    unsafe_allow_html=True
-                )
-                
+            
         # Añadir métricas de resumen
         st.markdown("#### Métricas Destacadas")
         
@@ -639,8 +599,7 @@ def mostrar_pagina_demografia():
                 st.warning("No hay datos suficientes para mostrar el consumo de alimentos complementarios.")
     except Exception as e:
         st.warning(f"Error al generar los gráficos de seguridad alimentaria: {e}")
-    
-    # Mostrar medidor de seguridad alimentaria
+        # Mostrar medidor de seguridad alimentaria
     try:
         st.markdown("#### Indicador de Seguridad Alimentaria")
         
@@ -733,7 +692,6 @@ def mostrar_pagina_demografia():
     except Exception as e:
         st.warning(f"Error al generar el indicador de seguridad alimentaria: {e}")
         
-    if __name__ == "__main__":
-        st.set_page_config(layout="wide")
-        mostrar_pagina_demografia()
-        
+if __name__ == "__main__":
+    st.set_page_config(layout="wide")
+    mostrar_pagina_demografia()
