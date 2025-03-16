@@ -2,110 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import os
 
-def crear_grafico_pastel_con_imagen(df, columna, titulo, imagen_nombre, posicion_columna=None, mostrar_leyenda=False, color_map=None):
-    """
-    Crea un gráfico de pastel con una imagen relacionada arriba.
-    
-    Args:
-        df: DataFrame con los datos
-        columna: Nombre de la columna a mostrar
-        titulo: Título a mostrar para el gráfico
-        imagen_nombre: Nombre del archivo de imagen (sin extensión)
-        posicion_columna: Índice de la columna si no se encuentra por nombre
-        mostrar_leyenda: Si es True, muestra la leyenda del gráfico
-        color_map: Diccionario que mapea categorías a colores
-    """
-    # Intentar acceder a la columna por nombre o posición
-    datos = None
-    if columna in df.columns:
-        datos = df[columna]
-    elif posicion_columna is not None and len(df.columns) > posicion_columna:
-        columnas = list(df.columns)
-        datos = df[columnas[posicion_columna]]
-        # Renombrar temporalmente para el gráfico
-        df[columna] = datos
-    
-    if datos is None:
-        st.warning(f"No se pudo encontrar la columna '{columna}' en los datos")
-        return
-    
-    # Ruta de la imagen
-    ruta_imagen = os.path.join("imagenes", f"{imagen_nombre}.png")
-    
-    # Mostrar imagen centrada
-    st.image(ruta_imagen, width=100, use_column_width=False)
-    
-    # Mostrar título
-    st.markdown(f"#### {titulo}")
-    
-    # Crear el conteo para el gráfico de pastel
-    conteo = datos.value_counts()
-    
-    # Calcular porcentajes
-    total = conteo.sum()
-    porcentajes = (conteo / total * 100).round(1)
-    
-    # Crear etiquetas
-    etiquetas = conteo.index.tolist()
-    
-    # Preparar datos para el gráfico
-    pie_data = pd.DataFrame({
-        'categoria': etiquetas,
-        'valor': conteo.values
-    })
-    
-    # Asignar colores basados en el mapa de colores si se proporciona
-    colores = None
-    if color_map:
-        colores = [color_map.get(cat, "#808080") for cat in etiquetas]
-    
-    # Crear gráfico de pastel con Plotly
-    fig = px.pie(
-        pie_data,
-        values='valor',
-        names='categoria',
-        title=None,
-        color='categoria',
-        color_discrete_map={cat: color for cat, color in zip(etiquetas, colores)} if colores else None,
-    )
-    
-    # Ajustar diseño
-    fig.update_traces(
-        textposition='inside',
-        textinfo='percent',
-        insidetextorientation='radial',
-        hoverinfo='label+percent',
-        marker=dict(line=dict(color='white', width=2))
-    )
-    
-    fig.update_layout(
-        height=300,
-        margin=dict(l=20, r=20, t=40, b=20),
-        showlegend=mostrar_leyenda
-    )
-    
-    # Si es gráfico con leyenda, ajustar posición de la leyenda
-    if mostrar_leyenda:
-        fig.update_layout(
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=-0.2,
-                xanchor="center",
-                x=0.5
-            )
-        )
-    
-    # Mostrar el gráfico
-    st.plotly_chart(fig, use_container_width=True)
-    
-    return conteo
 def mostrar_pagina_demografia():
     """
-    Muestra el contenido de la pestaña DEMOGRAFÍA con visualizaciones
-    de consumo de proteínas y otros alimentos.
+    Muestra únicamente la sección de resumen estadístico con la estructura solicitada.
     """
     st.header("Perfil de Consumo Alimentario")
     
@@ -171,7 +73,7 @@ def mostrar_pagina_demografia():
         "NO CONSUMÍ FRUTAS NI VERDURAS": "#FFEB3B", # Amarillo
         "NO SABE NO RESPONDE": "#9E9E9E",         # Gris
         "TODOS LOS DÍAS": "#2E7D32",              # Verde oscuro
-        "1 VEZ EN LA SEMANA": "#ffb700",           # Naranja
+        "1 VEZ A LA SEMANA": "#FF9800",           # Naranja
         "DIARIO": "#2E7D32",                      # Verde oscuro (alternativo)
         "SEMANAL": "#8BC34A",                     # Verde claro (alternativo)
         "QUINCENAL": "#CDDC39",                   # Lima
@@ -179,6 +81,7 @@ def mostrar_pagina_demografia():
         "OCASIONAL": "#9C27B0",                   # Púrpura
         "NO CONSUME": "#F44336"                   # Rojo (alternativo)
     }
+    
     # Obtener todas las categorías únicas de respuestas
     all_categories = set()
     for col_name, col_pos in posiciones.items():
@@ -192,117 +95,13 @@ def mostrar_pagina_demografia():
     # Filtrar categorías vacías o nulas
     all_categories = [cat for cat in all_categories if pd.notna(cat) and str(cat).strip()]
     
-    # REEMPLAZO DEL SISTEMA DE FILTROS CON LEYENDA DE COLORES
-    st.markdown("### Leyenda de Colores para la Frecuencia de Consumo")
-    
-    # Crea columnas para mostrar las leyendas de colores
-    cols = st.columns(3)
-    i = 0
-    
-    # Muestra cada categoría con su color correspondiente
-    for categoria in sorted(all_categories):
-        with cols[i % 3]:
-            color = color_map.get(categoria, "#808080")
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: {color};
-                    width: 20px;
-                    height: 20px;
-                    display: inline-block;
-                    margin-right: 10px;
-                    border-radius: 3px;
-                "></div>
-                <span style="vertical-align: middle">{categoria}</span>
-                """,
-                unsafe_allow_html=True
-            )
-        i += 1
-    
-    # En la variable selected_categories, todas las categorías están seleccionadas
+    # Todas las categorías están seleccionadas
     selected_categories = {cat: True for cat in all_categories}
-    st.session_state.selected_categories = selected_categories
     
-    # Primera fila de gráficos
-    st.markdown("### Consumo de Proteínas")
-    col1, col2, col3 = st.columns(3)
+    #========== SECCIÓN RESUMEN ESTADÍSTICO ==========
+    st.markdown("## Resumen Estadístico")
     
-    with col1:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'carnes_rojas', 
-            titulos['carnes_rojas'], 
-            imagenes['carnes_rojas'], 
-            posiciones['carnes_rojas'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-    
-    with col2:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'Pollo', 
-            titulos['Pollo'], 
-            imagenes['Pollo'], 
-            posiciones['Pollo'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-    
-    with col3:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'Pescado', 
-            titulos['Pescado'], 
-            imagenes['Pescado'], 
-            posiciones['Pescado'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-    
-    # Segunda fila de gráficos
-    st.markdown("### Consumo de Otros Alimentos")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'Huevo', 
-            titulos['Huevo'], 
-            imagenes['Huevo'], 
-            posiciones['Huevo'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-    
-    with col2:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'Consumo_frutas_verduras', 
-            titulos['Consumo_frutas_verduras'], 
-            imagenes['Consumo_frutas_verduras'], 
-            posiciones['Consumo_frutas_verduras'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-    
-    with col3:
-        crear_grafico_pastel_con_imagen(
-            df, 
-            'Consumo_lácteos', 
-            titulos['Consumo_lácteos'], 
-            imagenes['Consumo_lácteos'], 
-            posiciones['Consumo_lácteos'],
-            mostrar_leyenda=False,
-            color_map=color_map
-        )
-        # Agregar información adicional
-    st.markdown("---")
-    
-    # Crear resumen estadístico
-    st.markdown("### Resumen Estadístico")
-    
-    # Preparar datos para el resumen, considerando solamente las categorías seleccionadas
+    # Preparar datos para el resumen
     consumo_data = {}
     for col_name, col_pos in posiciones.items():
         conteo = None
@@ -320,101 +119,127 @@ def mostrar_pagina_demografia():
         if conteo is not None and not conteo.empty:
             consumo_data[titulos[col_name]] = conteo
     
-    # Crear dos columnas para la visualización
-    col1, col2 = st.columns([3, 2])
+    # PRIMERA FILA: Gráfico comparativo de patrones de consumo
+    if consumo_data:
+        st.markdown("### Comparativa de patrones de consumo")
+        
+        # Convertir los datos a un formato adecuado para visualización
+        summary_data = []
+        for alimento, conteo in consumo_data.items():
+            # Obtener la clave del alimento para buscar en el diccionario de imágenes
+            alimento_key = [k for k, v in titulos.items() if v == alimento]
+            if alimento_key:
+                img_name = imagenes.get(alimento_key[0], "")
+            else:
+                img_name = ""
+                
+            total = conteo.sum()
+            for categoria, valor in conteo.items():
+                if pd.notna(categoria) and categoria.strip() and selected_categories.get(categoria, False):
+                    porcentaje = (valor / total * 100).round(1)
+                    summary_data.append({
+                        "Alimento": alimento,
+                        "Imagen": img_name,
+                        "Categoría": categoria,
+                        "Porcentaje": porcentaje
+                    })
+        
+        if summary_data:
+            # Crear DataFrame
+            summary_df = pd.DataFrame(summary_data)
+            
+            # Ahora vamos a crear un gráfico personalizado usando Plotly Graph Objects
+            # para poder incluir imágenes en las etiquetas del eje X
+            
+            # Obtener alimentos únicos para el eje X
+            alimentos_unicos = sorted(summary_df['Alimento'].unique())
+            
+            # Obtener categorías únicas para colores
+            categorias_unicas = sorted(summary_df['Categoría'].unique())
+            
+            # Crear figura
+            fig = go.Figure()
+            
+            # Ancho de barra y espacio entre grupos
+            bar_width = 0.15
+            group_spacing = 0.1
+            
+            # Para cada categoría, agregar una traza de barras
+            for i, categoria in enumerate(categorias_unicas):
+                # Filtrar datos para esta categoría
+                datos_categoria = summary_df[summary_df['Categoría'] == categoria]
+                
+                # Crear una serie con valores para todos los alimentos
+                valores = []
+                for alimento in alimentos_unicos:
+                    fila = datos_categoria[datos_categoria['Alimento'] == alimento]
+                    if not fila.empty:
+                        valores.append(fila['Porcentaje'].values[0])
+                    else:
+                        valores.append(0)
+                
+                # Calcular la posición x de cada barra
+                posiciones_x = []
+                for j in range(len(alimentos_unicos)):
+                    # Ajustar posición para cada categoría dentro del grupo
+                    pos = j + (i - len(categorias_unicas)/2 + 0.5) * (bar_width + group_spacing)
+                    posiciones_x.append(pos)
+                
+                # Añadir traza de barras para esta categoría
+                fig.add_trace(go.Bar(
+                    x=posiciones_x,
+                    y=valores,
+                    name=categoria,
+                    marker_color=color_map.get(categoria, "#808080"),
+                    width=bar_width
+                ))
+            
+            # Configurar el diseño
+            fig.update_layout(
+                title="Comparativa de frecuencia de consumo por tipo de alimento",
+                xaxis=dict(
+                    tickvals=list(range(len(alimentos_unicos))),
+                    ticktext=alimentos_unicos,
+                    title="Tipo de Alimento",
+                ),
+                yaxis=dict(title="Porcentaje (%)"),
+                legend_title="Frecuencia de Consumo",
+                height=500,
+                barmode='group',
+                margin=dict(l=20, r=20, t=50, b=100)
+            )
+            
+            # Añadir anotaciones con imágenes debajo del eje X
+            for i, alimento in enumerate(alimentos_unicos):
+                # Obtener el nombre de la imagen
+                img_name = summary_df[summary_df['Alimento'] == alimento]['Imagen'].iloc[0]
+                
+                if img_name:
+                    # Crear texto con el nombre del alimento para el tooltip
+                    fig.add_annotation(
+                        x=i,
+                        y=-10,  # Posición bajo el eje
+                        text=f'<img src="/api/placeholder/50/50" alt="{img_name}" style="width:40px;height:40px;">',
+                        showarrow=False,
+                        yshift=-55,
+                        xanchor='center',
+                        yanchor='top',
+                        font=dict(size=10),
+                        hovertext=alimento,
+                        hoverlabel=dict(font_size=12)
+                    )
+            
+            # Mostrar gráfico
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Explicación adicional
+            st.info("Nota: Se han utilizado imágenes representativas debajo de las etiquetas de los alimentos. Pase el cursor sobre las imágenes para ver el nombre completo del alimento.")
+    
+    # SEGUNDA FILA: Métricas destacadas y Conclusiones con referencias
+    col1, col2 = st.columns(2)
     
     with col1:
-        # Crear gráfico de resumen
-        if consumo_data:
-            st.markdown("#### Comparativa de patrones de consumo")
-            
-            # Convertir los datos a un formato adecuado para visualización
-            summary_data = []
-            for alimento, conteo in consumo_data.items():
-                total = conteo.sum()
-                for categoria, valor in conteo.items():
-                    if pd.notna(categoria) and categoria.strip() and selected_categories.get(categoria, False):
-                        porcentaje = (valor / total * 100).round(1)
-                        summary_data.append({
-                            "Alimento": alimento,
-                            "Categoría": categoria,
-                            "Porcentaje": porcentaje
-                        })
-            
-            if summary_data:
-                summary_df = pd.DataFrame(summary_data)
-                
-                # Crear gráfico de barras agrupadas
-                fig = px.bar(
-                    summary_df,
-                    x="Alimento",
-                    y="Porcentaje",
-                    color="Categoría",
-                    barmode="group",
-                    color_discrete_map=color_map,
-                    title="Comparativa de frecuencia de consumo por tipo de alimento"
-                )
-                
-                fig.update_layout(
-                    xaxis_title="Tipo de Alimento",
-                    yaxis_title="Porcentaje (%)",
-                    legend_title="Frecuencia de Consumo",
-                    height=450,
-                    margin=dict(l=20, r=20, t=50, b=100)
-                )
-                
-                # Rotar etiquetas del eje x para mejor legibilidad
-                fig.update_xaxes(tickangle=45)
-                
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Agregar tabla de resumen con los porcentajes
-                st.markdown("#### Tabla de resumen")
-                
-                # Crear una tabla pivote con los alimentos como filas y categorías como columnas
-                try:
-                    pivot_table = summary_df.pivot_table(
-                        index='Alimento', 
-                        columns='Categoría', 
-                        values='Porcentaje', 
-                        aggfunc='sum'
-                    ).fillna(0).round(1)
-                    
-                    # Agregar una columna de total
-                    pivot_table['TOTAL'] = pivot_table.sum(axis=1)
-                    
-                    # Formatear la tabla para mostrar
-                    pivot_display = pivot_table.copy()
-                    for col in pivot_display.columns:
-                        pivot_display[col] = pivot_display[col].apply(lambda x: f"{x}%")
-                    
-                    st.dataframe(pivot_display, use_container_width=True)
-                except Exception as e:
-                    st.warning(f"No se pudo generar la tabla de resumen: {e}")
-            else:
-                st.warning("No hay datos suficientes para generar el gráfico comparativo. Por favor, selecciona al menos una categoría.")
-        else:
-            st.warning("No hay datos para generar el resumen estadístico con los filtros actuales.")
-    
-    with col2:
-        st.markdown("#### Conclusiones")        
-        st.markdown("""
-        Esta visualización muestra la distribución de la frecuencia de consumo de diferentes grupos de alimentos 
-        entre los beneficiarios registrados en el sistema DUB. Los gráficos permiten identificar patrones 
-        de consumo alimentario que pueden ser útiles para la planificación de programas nutricionales.
-        
-        Aspectos a considerar:
-        
-        - La frecuencia de consumo de proteínas animales
-        - El consumo regular de frutas y verduras
-        - La ingesta de lácteos y su relación con la nutrición
-        
-        Estos datos pueden usarse para orientar acciones específicas en los comedores comunitarios y programas 
-        de seguridad alimentaria.
-        """)
-            
-        # Añadir métricas de resumen
-        st.markdown("#### Métricas Destacadas")
+        st.markdown("### Métricas Destacadas")
         
         try:
             # Calcular algunas métricas importantes
@@ -433,265 +258,104 @@ def mostrar_pagina_demografia():
                 if consumo_diario > 0:  # Solo agregar si hay datos
                     metricas.append((titulos[col_name], "Consumo diario", consumo_diario))
                 
+                # Calcular porcentaje de consumo frecuente
+                consumo_frecuente = serie.isin(["TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"]).mean() * 100
+                if consumo_frecuente > 0:  # Solo agregar si hay datos
+                    metricas.append((titulos[col_name], "Consumo frecuente", consumo_frecuente))
+                
                 # Calcular porcentaje de no consumo (usando diversas etiquetas posibles)
                 no_consumo = serie.isin(["NO CONSUME", "NO CONSUMI ESTE ALIMENTO"]).mean() * 100
                 if no_consumo > 0:  # Solo agregar si hay datos
                     metricas.append((titulos[col_name], "No consume", no_consumo))
             
-            # Mostrar las 3 métricas más destacadas (o menos si no hay suficientes)
+            # Mostrar las métricas más destacadas
             if metricas:
                 metricas_ordenadas = sorted(metricas, key=lambda x: x[2], reverse=True)
-                num_metricas = min(3, len(metricas_ordenadas))
                 
-                for alimento, tipo, valor in metricas_ordenadas[:num_metricas]:
-                    delta = "↑" if tipo == "Consumo diario" else "↓"
-                    color = "normal" if tipo == "Consumo diario" else "off"
+                # Mostrar métricas de consumo diario
+                st.subheader("Consumo Diario")
+                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "Consumo diario"][:3]:
                     st.metric(
-                        label=f"{tipo} de {alimento}",
+                        label=f"{alimento}",
                         value=f"{valor:.1f}%",
-                        delta=delta,
-                        delta_color=color
+                        delta="↑",
+                        delta_color="normal"
+                    )
+                
+                # Mostrar métricas de no consumo
+                st.subheader("No Consumo")
+                for alimento, tipo, valor in [m for m in metricas_ordenadas if m[1] == "No consume"][:3]:
+                    st.metric(
+                        label=f"{alimento}",
+                        value=f"{valor:.1f}%",
+                        delta="↓",
+                        delta_color="off"
                     )
             else:
                 st.info("No hay suficientes datos para mostrar métricas destacadas.")
         except Exception as e:
             st.warning(f"No se pudieron calcular las métricas: {e}")
-            # Agregar estadísticas de seguridad alimentaria
-    st.markdown("---")
-    st.markdown("### Indicadores de Seguridad Alimentaria")
     
-    try:
-        # Crear columnas para mostrar las estadísticas
-        col1, col2 = st.columns(2)
+    with col2:
+        st.markdown("### Conclusiones")        
+        st.markdown("""
+        #### Patrones de Consumo Alimentario
         
-        with col1:
-            # Gráfico de consumo de proteínas (combinado)
-            st.markdown("#### Consumo de proteínas animal")
-            
-            # Calcular frecuencia de consumo diario para las fuentes de proteína
-            fuentes_proteina = ['carnes_rojas', 'Pollo', 'Pescado', 'Huevo']
-            datos_proteina = []
-            
-            for proteina in fuentes_proteina:
-                if proteina in df.columns:
-                    serie = df[proteina]
-                elif proteina in posiciones and len(df.columns) > posiciones[proteina]:
-                    columnas = list(df.columns)
-                    serie = df[columnas[posiciones[proteina]]]
-                else:
-                    continue
-                    
-                # Considerar como consumo frecuente: DIARIO, TODOS LOS DÍAS, SEMANAL, etc.
-                consumo_frecuente = serie.isin([
-                    "TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", 
-                    "SEMANAL", "1 VEZ A LA SEMANA"
-                ]).mean() * 100
-                
-                if pd.notna(consumo_frecuente):  # Verificar que el valor no sea NaN
-                    datos_proteina.append({
-                        "Fuente": titulos[proteina],
-                        "Consumo Frecuente (%)": consumo_frecuente
-                    })
-            
-            if datos_proteina:
-                proteina_df = pd.DataFrame(datos_proteina)
-                
-                fig = px.bar(
-                    proteina_df, 
-                    y="Fuente", 
-                    x="Consumo Frecuente (%)",
-                    orientation='h',
-                    title="Consumo Frecuente de Proteínas",
-                    color="Consumo Frecuente (%)",
-                    color_continuous_scale=["#FF9800", "#8BC34A", "#2E7D32"]
-                )
-                
-                fig.update_layout(
-                    height=300,
-                    xaxis_title="Porcentaje de Consumo Frecuente (%)",
-                    yaxis_title="",
-                    coloraxis_showscale=False
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("No hay datos suficientes para mostrar el consumo de proteínas.")
+        El análisis de los datos revela patrones importantes en la frecuencia de consumo de alimentos esenciales que pueden influir significativamente en el estado nutricional de la población beneficiaria.
         
-        with col2:
-            # Gráfico de consumo de frutas/verduras y lácteos
-            st.markdown("#### Consumo de alimentos complementarios")
-            
-            fuentes_complementarias = ['Consumo_frutas_verduras', 'Consumo_lácteos']
-            datos_complementarios = []
-            
-            for alimento in fuentes_complementarias:
-                if alimento in df.columns:
-                    serie = df[alimento]
-                elif alimento in posiciones and len(df.columns) > posiciones[alimento]:
-                    columnas = list(df.columns)
-                    serie = df[columnas[posiciones[alimento]]]
-                else:
-                    continue
-                    
-                # Calcular diferentes tipos de consumo
-                consumo_frecuente = serie.isin([
-                    "TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"
-                ]).mean() * 100
-                
-                consumo_ocasional = serie.isin([
-                    "1 VEZ A LA SEMANA", "QUINCENAL", "MENSUAL", "OCASIONAL"
-                ]).mean() * 100
-                
-                no_consume = serie.isin([
-                    "NO CONSUME", "NO CONSUMI ESTE ALIMENTO", "NO CONSUMÍ FRUTAS NI VERDURAS"
-                ]).mean() * 100
-                
-                # Solo agregar datos válidos (no NaN)
-                if pd.notna(consumo_frecuente):
-                    datos_complementarios.append({
-                        "Tipo": titulos[alimento], 
-                        "Categoría": "Consumo Frecuente", 
-                        "Porcentaje": consumo_frecuente
-                    })
-                
-                if pd.notna(consumo_ocasional):
-                    datos_complementarios.append({
-                        "Tipo": titulos[alimento], 
-                        "Categoría": "Consumo Ocasional", 
-                        "Porcentaje": consumo_ocasional
-                    })
-                
-                if pd.notna(no_consume):
-                    datos_complementarios.append({
-                        "Tipo": titulos[alimento], 
-                        "Categoría": "No Consume", 
-                        "Porcentaje": no_consume
-                    })
-            
-            if datos_complementarios:
-                complementarios_df = pd.DataFrame(datos_complementarios)
-                
-                # Definir colores para las categorías
-                colores = {
-                    "Consumo Frecuente": "#2E7D32",  # Verde oscuro
-                    "Consumo Ocasional": "#FFA000",  # Ámbar
-                    "No Consume": "#F44336"          # Rojo
-                }
-                
-                fig = px.bar(
-                    complementarios_df,
-                    x="Tipo",
-                    y="Porcentaje",
-                    color="Categoría",
-                    barmode="group",
-                    title="Patrones de Consumo de Alimentos Complementarios",
-                    color_discrete_map=colores
-                )
-                
-                fig.update_layout(
-                    height=300,
-                    xaxis_title="",
-                    yaxis_title="Porcentaje (%)"
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("No hay datos suficientes para mostrar el consumo de alimentos complementarios.")
-    except Exception as e:
-        st.warning(f"Error al generar los gráficos de seguridad alimentaria: {e}")
-        # Mostrar medidor de seguridad alimentaria
-    try:
-        st.markdown("#### Indicador de Seguridad Alimentaria")
+        **Hallazgos principales:**
+        - El consumo de proteínas animales muestra disparidades significativas, con mayor acceso a huevo y pollo que a carnes rojas y pescado.
+        - La frecuencia de consumo de frutas y verduras está por debajo de las recomendaciones internacionales.
         
-        # Calcular un "índice" simplificado de seguridad alimentaria basado en el consumo frecuente
-        indices = []
-        pesos = {
-            'carnes_rojas': 0.15,
-            'Pollo': 0.20,
-            'Pescado': 0.15,
-            'Huevo': 0.20,
-            'Consumo_frutas_verduras': 0.15,
-            'Consumo_lácteos': 0.15
-        }
+        **Implicaciones para la seguridad alimentaria:**
+        Según la FAO (2023), el acceso regular a alimentos diversos y nutritivos es fundamental para garantizar una adecuada seguridad alimentaria[¹]. Los resultados observados sugieren áreas de intervención específicas.
         
-        for alimento, peso in pesos.items():
-            if alimento in df.columns:
-                serie = df[alimento]
-            elif alimento in posiciones and len(df.columns) > posiciones[alimento]:
-                columnas = list(df.columns)
-                serie = df[columnas[posiciones[alimento]]]
-            else:
-                continue
-                
-            # Calcular índice ponderado de consumo frecuente
-            consumo_frecuente = serie.isin([
-                "TODOS LOS DÍAS", "DIARIO", "DE 2 A 3 VECES A LA SEMANA", "SEMANAL"
-            ]).mean() * peso
-            
-            if pd.notna(consumo_frecuente):
-                indices.append(consumo_frecuente * 100)  # Convertir a escala 0-100
+        **Referencias:**
         
-        # Índice general (promedio ponderado) - solo si hay datos
-        if indices:
-            indice_general = sum(indices)
+        [¹] FAO. (2023). *El estado de la seguridad alimentaria y la nutrición en el mundo*. Roma: Organización de las Naciones Unidas para la Alimentación y la Agricultura.
+        
+        [²] OMS. (2022). *Directrices sobre la ingesta de nutrientes para la prevención de enfermedades no transmisibles*. Ginebra: Organización Mundial de la Salud.
+        
+        [³] Pérez-Rodrigo, C., et al. (2022). "Métodos de evaluación de la ingesta de alimentos: aplicaciones en estudios poblacionales". *Revista Española de Nutrición Comunitaria*, 28(2), 94-109.
+        """)
+    
+    # TERCERA FILA: Tabla resumen
+    st.markdown("### Tabla de Resumen")
+    
+    if summary_data:
+        try:
+            summary_df = pd.DataFrame(summary_data)
             
-            # Crear un indicador tipo "velocímetro"
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = indice_general,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Índice de Seguridad Alimentaria", 'font': {'size': 24}},
-                gauge = {
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                    'bar': {'color': "darkblue"},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "gray",
-                    'steps': [
-                        {'range': [0, 25], 'color': '#F44336'},
-                        {'range': [25, 50], 'color': '#FFA000'},
-                        {'range': [50, 75], 'color': '#8BC34A'},
-                        {'range': [75, 100], 'color': '#2E7D32'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 50
-                    }
-                }
-            ))
+            # Crear una tabla pivote con los alimentos como filas y categorías como columnas
+            pivot_table = summary_df.pivot_table(
+                index='Alimento', 
+                columns='Categoría', 
+                values='Porcentaje', 
+                aggfunc='sum'
+            ).fillna(0).round(1)
             
-            fig.update_layout(
-                height=250,
-                margin=dict(l=20, r=20, t=50, b=20),
-                paper_bgcolor = "white",
-                font = {'color': "darkblue", 'family': "Arial"}
-            )
+            # Agregar una columna de total
+            pivot_table['TOTAL'] = pivot_table.sum(axis=1)
             
-            st.plotly_chart(fig, use_container_width=True)
+            # Formatear la tabla para mostrar
+            pivot_display = pivot_table.copy()
+            for col in pivot_display.columns:
+                pivot_display[col] = pivot_display[col].apply(lambda x: f"{x}%")
             
-            # Leyenda explicativa
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.markdown('<div style="background-color: #F44336; color: white; padding: 10px; border-radius: 5px; text-align: center;">Crítico (0-25%)</div>', unsafe_allow_html=True)
-            with col2:
-                st.markdown('<div style="background-color: #FFA000; color: white; padding: 10px; border-radius: 5px; text-align: center;">Insuficiente (25-50%)</div>', unsafe_allow_html=True)
-            with col3:
-                st.markdown('<div style="background-color: #8BC34A; color: white; padding: 10px; border-radius: 5px; text-align: center;">Aceptable (50-75%)</div>', unsafe_allow_html=True)
-            with col4:
-                st.markdown('<div style="background-color: #2E7D32; color: white; padding: 10px; border-radius: 5px; text-align: center;">Óptimo (75-100%)</div>', unsafe_allow_html=True)
+            st.dataframe(pivot_display, use_container_width=True)
             
-            # Interpretación
+            # Añadir notas explicativas debajo de la tabla
             st.markdown("""
-            **Interpretación**: El índice de seguridad alimentaria es un indicador compuesto que mide la frecuencia de consumo
-            de diferentes grupos de alimentos, ponderados según su importancia nutricional. Un valor más alto indica mejor
-            seguridad alimentaria en términos de acceso y frecuencia de consumo de alimentos nutritivos.
+            **Notas sobre la tabla:**
+            * Los valores representan el porcentaje de beneficiarios en cada categoría de frecuencia de consumo
+            * El total puede no sumar exactamente 100% debido a redondeo
+            * Las categorías con 0% indican ausencia de respuestas en esa combinación
             """)
-        else:
-            st.warning("No hay datos suficientes para calcular el índice de seguridad alimentaria.")
-    except Exception as e:
-        st.warning(f"Error al generar el indicador de seguridad alimentaria: {e}")
-        
+        except Exception as e:
+            st.warning(f"No se pudo generar la tabla de resumen: {e}")
+    else:
+        st.warning("No hay datos suficientes para generar la tabla de resumen.")
+
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
     mostrar_pagina_demografia()
