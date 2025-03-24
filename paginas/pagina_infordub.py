@@ -166,7 +166,7 @@ def mostrar_pagina_infordub():
         with st.spinner("Cargando datos desde Google Sheets..."):
             try:
                 # Cargar los datos desde la hoja "DUB"
-                sheet_id = "1haZINioOFe4WTL2G9FzsYt0p4-8uJ5WKbukexBYhx_o"
+                sheet_id = "19aYe071W4ktFUHOswLf9oB3nj2hcOvklavxdR8Ohv40"
                 df = load_data(sheet_id, "DUB")
                 
                 if df is not None and not df.empty:
