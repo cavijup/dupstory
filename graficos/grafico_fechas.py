@@ -27,7 +27,8 @@ def crear_grafico_fechas(df):
         # Paso 3: Convertir fechas a formato datetime
         # Primero asegurarse que la fecha es texto
         fecha_grouped['FECHA'] = fecha_grouped['FECHA'].astype(str)
-        fecha_grouped['FECHA_DT'] = pd.to_datetime(fecha_grouped['FECHA'], errors='coerce')
+        # Especificar formato como DD/MM/YYYY (formato europeo)
+        fecha_grouped['FECHA_DT'] = pd.to_datetime(fecha_grouped['FECHA'], format='%d/%m/%Y', errors='coerce')
         
         # Paso 4: Eliminar filas donde la conversión a fecha falló
         fecha_grouped = fecha_grouped.dropna(subset=['FECHA_DT'])
