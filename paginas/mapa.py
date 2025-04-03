@@ -188,50 +188,6 @@ def crear_mapa_calor_comuna_estrato(df):
     except Exception as e:
         st.warning(f"No se pudieron ordenar las columnas numéricamente: {e}")
     
-    # Convertir a formato largo para plotly
-    heatmap_data = crosstab.reset_index().melt(
-        id_vars='Comuna',
-        var_name='Estrato',
-        value_name='Cantidad'
-    )
-    
-    # Crear el mapa de calor con plotly
-    fig = px.imshow(
-        crosstab,
-        labels=dict(x="Estrato", y="Comuna", color="Cantidad de Registros"),
-        x=crosstab.columns,
-        y=crosstab.index,
-        color_continuous_scale="YlGnBu",
-        aspect="auto"
-    )
-    
-    # Añadir anotaciones de texto con los valores
-    annotations = []
-    for i, comuna in enumerate(crosstab.index):
-        for j, estrato in enumerate(crosstab.columns):
-            valor = crosstab.loc[comuna, estrato]
-            # Solo mostrar valores mayores que cero para evitar sobrecarga visual
-            if valor > 0:
-                annotations.append(
-                    dict(
-                        x=j,
-                        y=i,
-                        text=str(int(valor)),
-                        showarrow=False,
-                        font=dict(
-                            color="black" if valor < crosstab.max().max() * 0.7 else "white"
-                        )
-                    )
-                )
-    
-    fig.update_layout(
-        annotations=annotations,
-        height=max(500, len(crosstab) * 25),  # Altura dinámica según cantidad de comunas
-        margin=dict(l=10, r=10, t=50, b=50),
-        title="Distribución de Registros por Comuna y Estrato",
-        xaxis=dict(side="top")
-    )
-    
     # Mostrar estadísticas generales
     col1, col2, col3 = st.columns(3)
     
@@ -253,9 +209,6 @@ def crear_mapa_calor_comuna_estrato(df):
             value=f"{int(crosstab.sum().sum()):,}"
         )
     
-    # Mostrar el mapa de calor
-    st.plotly_chart(fig, use_container_width=True)
-    
     # Mostrar tabla de resumen
     st.subheader("Tabla de Datos")
     
@@ -267,42 +220,6 @@ def crear_mapa_calor_comuna_estrato(df):
     
     # Mostrar la tabla
     st.dataframe(crosstab.style.background_gradient(cmap='YlGnBu', axis=None), use_container_width=True)
-    
-    # Mostrar resumen por comuna (top 10)
-    st.subheader("Top 10 Comunas por Cantidad de Registros")
-    
-    # Obtener los totales por comuna (excluyendo la fila de Total)
-    totales_comuna = crosstab['Total'][:-1]  # Excluir la fila de total
-    
-    # Ordenar y tomar los 10 principales (de mayor a menor)
-    top_comunas = totales_comuna.sort_values(ascending=False).head(10)
-    
-    # Crear gráfico de barras horizontales
-    fig_barras_h = px.bar(
-        y=top_comunas.index,
-        x=top_comunas.values,
-        orientation='h',
-        labels={'y': 'Comuna', 'x': 'Cantidad de Registros'},
-        color=top_comunas.values,
-        color_continuous_scale="YlGnBu",
-        text=top_comunas.values
-    )
-    
-    fig_barras_h.update_traces(
-        texttemplate='%{text:,}',
-        textposition='outside'
-    )
-    
-    fig_barras_h.update_layout(
-        title="Top 10 Comunas por Cantidad de Registros",
-        height=500,
-        xaxis_title="Cantidad de Registros",
-        yaxis_title="Comuna",
-        yaxis=dict(autorange="reversed"),  # Para que la mayor esté arriba
-        coloraxis_showscale=False
-    )
-    
-    st.plotly_chart(fig_barras_h, use_container_width=True)
 
 def crear_mapa(df):
     """
@@ -466,43 +383,6 @@ def crear_mapa(df):
     else:
         agrupado_filtrado = agrupado
     
-    # Crear mapa con Plotly
-    fig = px.scatter_mapbox(
-        agrupado_filtrado,
-        lat="lat",
-        lon="lon",
-        size="Conteo",
-        hover_name="Comedor",
-        hover_data={"lat": False, "lon": False, "Conteo": False, "hover_text": True},
-        custom_data=["hover_text"],
-        color="Porcentaje_cupos" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Conteo",
-        color_continuous_scale="RdYlGn" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Viridis",
-        size_max=25,
-        zoom=11,
-        title="Mapa de Comedores por Ubicación"
-    )
-    
-    # Configurar el hover para mostrar la información étnica
-    fig.update_traces(
-        hovertemplate="%{customdata[0]}",
-    )
-    
-    # Cambiar el estilo del mapa
-    fig.update_layout(
-        mapbox_style="carto-positron",
-        mapbox=dict(
-            center=dict(
-                lat=agrupado_filtrado["lat"].mean() if not agrupado_filtrado.empty else 4.6097,
-                lon=agrupado_filtrado["lon"].mean() if not agrupado_filtrado.empty else -74.0817
-            ),
-        ),
-        height=700,
-        margin={"r": 0, "t": 50, "l": 0, "b": 0},
-        coloraxis_colorbar=dict(
-            title="% de Cupos" if "Porcentaje_cupos" in agrupado_filtrado.columns else "Registros"
-        )
-    )
-    
     # Mostrar estadísticas generales
     col1, col2, col3 = st.columns(3)
     
@@ -531,9 +411,6 @@ def crear_mapa(df):
                 label="Promedio por Ubicación",
                 value=f"{promedio:.1f}"
             )
-    
-    # Mostrar mapa
-    st.plotly_chart(fig, use_container_width=True)
     
     # Mostrar tabla de resumen
     st.subheader("Resumen de Ubicaciones")
