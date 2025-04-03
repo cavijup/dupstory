@@ -490,7 +490,7 @@ def crear_mapa(df):
                 },
                 size='tamano_marcador',
                 color='Porcentaje_cupos',
-                color_continuous_scale='RdYlGn_r',  # Rojo para alta ocupación, verde para baja
+                color_continuous_scale='RdYlBu',  # Rojo para baja ocupación, azul para alta
                 range_color=[0, 100],
                 labels={
                     'Porcentaje_cupos': '% Ocupación',
@@ -553,7 +553,7 @@ def crear_mapa(df):
         st.caption("""
         **Nota sobre el mapa:**
         - El tamaño de los puntos representa la cantidad de registros
-        - El color representa el porcentaje de ocupación (rojo = alta ocupación, verde = baja ocupación)
+        - El color representa el porcentaje de ocupación (azul = alta ocupación, rojo = baja ocupación)
         - Haz clic en los puntos para ver más detalles
         """)
     else:
