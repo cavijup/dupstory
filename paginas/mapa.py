@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import re
 import numpy as np
 from google_connection import load_data
@@ -90,6 +91,251 @@ def cargar_info_comedores():
     except Exception as e:
         st.warning(f"Error al cargar información de COMEDORES: {e}")
         return None
+
+def crear_mapa_calor_comuna_estrato(df):
+    """
+    Crea y muestra un mapa de calor que relaciona Comuna (eje Y) y Estrato (eje X)
+    mostrando la cantidad de registros en cada combinación.
+    
+    Args:
+        df: DataFrame con los datos
+    """
+    st.header("Mapa de Calor: Comuna vs Estrato")
+    
+    # Crear una copia para no modificar el original
+    df_temp = df.copy()
+    
+    # Verificar si existen las columnas necesarias
+    if 'Comuna' not in df_temp.columns:
+        # Intentar obtener Comuna desde la posición V (índice 21)
+        columnas = list(df_temp.columns)
+        if len(columnas) > 21:
+            df_temp['Comuna'] = df_temp[columnas[21]]
+            st.success("Columna 'Comuna' asignada desde la posición V.")
+        else:
+            st.error("No se pudo encontrar la columna 'Comuna'. No se puede crear el mapa de calor.")
+            return
+    
+    if 'Estrato' not in df_temp.columns:
+        # Intentar obtener Estrato desde la posición AB (índice 27)
+        columnas = list(df_temp.columns)
+        if len(columnas) > 27:
+            df_temp['Estrato'] = df_temp[columnas[27]]
+            st.success("Columna 'Estrato' asignada desde la posición AB.")
+        else:
+            st.error("No se pudo encontrar la columna 'Estrato'. No se puede crear el mapa de calor.")
+            return
+    
+    if 'Área_de_residencia_geográfica' not in df_temp.columns:
+        # Intentar obtener Área_de_residencia_geográfica desde la posición U (índice 20)
+        columnas = list(df_temp.columns)
+        if len(columnas) > 20:
+            df_temp['Área_de_residencia_geográfica'] = df_temp[columnas[20]]
+            st.success("Columna 'Área_de_residencia_geográfica' asignada desde la posición U.")
+        else:
+            st.warning("No se pudo encontrar la columna 'Área_de_residencia_geográfica'. El filtro no estará disponible.")
+    
+    # Limpiar y preparar datos
+    # Convertir valores nulos o vacíos a "No especificado"
+    df_temp['Comuna'] = df_temp['Comuna'].fillna("No especificado")
+    df_temp['Estrato'] = df_temp['Estrato'].fillna("No especificado")
+    
+    # Filtrar por área de residencia si está disponible
+    if 'Área_de_residencia_geográfica' in df_temp.columns:
+        # Obtener valores únicos para el filtro
+        areas_unicas = sorted(df_temp['Área_de_residencia_geográfica'].dropna().unique())
+        
+        # Crear filtro en el sidebar
+        st.sidebar.header("Filtros del Mapa de Calor")
+        areas_seleccionadas = st.sidebar.multiselect(
+            "Filtrar por Área de Residencia:", 
+            options=["Todos"] + list(areas_unicas),
+            default=["Todos"]
+        )
+        
+        # Aplicar filtro si se seleccionó algo diferente a "Todos"
+        if areas_seleccionadas and "Todos" not in areas_seleccionadas:
+            df_temp = df_temp[df_temp['Área_de_residencia_geográfica'].isin(areas_seleccionadas)]
+            st.success(f"Filtrando por áreas: {', '.join(areas_seleccionadas)}")
+    
+    # Crear tabla de conteo cruzado (comuna vs estrato)
+    crosstab = pd.crosstab(
+        index=df_temp['Comuna'], 
+        columns=df_temp['Estrato'],
+        values=None,
+        aggfunc='size',
+        normalize=False
+    ).fillna(0)
+    
+    # Asegurar que todas las comunas estén en orden ascendente
+    crosstab = crosstab.sort_index()
+    
+    # Intentar ordenar las columnas (estratos) numéricamente
+    try:
+        # Separar columnas numéricas y no numéricas
+        columnas_num = []
+        columnas_texto = []
+        
+        for col in crosstab.columns:
+            try:
+                columnas_num.append(int(col))
+            except:
+                columnas_texto.append(col)
+        
+        # Ordenar columnas numéricas y luego añadir las de texto
+        columnas_ordenadas = [str(x) for x in sorted(columnas_num)] + sorted(columnas_texto)
+        
+        # Reorganizar el DataFrame con las columnas ordenadas
+        crosstab = crosstab[columnas_ordenadas]
+    except Exception as e:
+        st.warning(f"No se pudieron ordenar las columnas numéricamente: {e}")
+    
+    # Convertir a formato largo para plotly
+    heatmap_data = crosstab.reset_index().melt(
+        id_vars='Comuna',
+        var_name='Estrato',
+        value_name='Cantidad'
+    )
+    
+    # Crear el mapa de calor con plotly
+    fig = px.imshow(
+        crosstab,
+        labels=dict(x="Estrato", y="Comuna", color="Cantidad de Registros"),
+        x=crosstab.columns,
+        y=crosstab.index,
+        color_continuous_scale="YlGnBu",
+        aspect="auto"
+    )
+    
+    # Añadir anotaciones de texto con los valores
+    annotations = []
+    for i, comuna in enumerate(crosstab.index):
+        for j, estrato in enumerate(crosstab.columns):
+            valor = crosstab.loc[comuna, estrato]
+            # Solo mostrar valores mayores que cero para evitar sobrecarga visual
+            if valor > 0:
+                annotations.append(
+                    dict(
+                        x=j,
+                        y=i,
+                        text=str(int(valor)),
+                        showarrow=False,
+                        font=dict(
+                            color="black" if valor < crosstab.max().max() * 0.7 else "white"
+                        )
+                    )
+                )
+    
+    fig.update_layout(
+        annotations=annotations,
+        height=max(500, len(crosstab) * 25),  # Altura dinámica según cantidad de comunas
+        margin=dict(l=10, r=10, t=50, b=50),
+        title="Distribución de Registros por Comuna y Estrato",
+        xaxis=dict(side="top")
+    )
+    
+    # Mostrar estadísticas generales
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="Total de Comunas",
+            value=len(crosstab)
+        )
+    
+    with col2:
+        st.metric(
+            label="Total de Estratos",
+            value=len(crosstab.columns)
+        )
+    
+    with col3:
+        st.metric(
+            label="Total de Registros",
+            value=f"{int(crosstab.sum().sum()):,}"
+        )
+    
+    # Mostrar el mapa de calor
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Mostrar tabla de resumen
+    st.subheader("Tabla de Datos")
+    
+    # Añadir totales por comuna
+    crosstab['Total'] = crosstab.sum(axis=1)
+    
+    # Añadir fila de totales
+    crosstab.loc['Total'] = crosstab.sum()
+    
+    # Mostrar la tabla
+    st.dataframe(crosstab.style.background_gradient(cmap='YlGnBu', axis=None), use_container_width=True)
+    
+    # Mostrar resumen por estrato
+    st.subheader("Distribución por Estrato")
+    
+    # Calcular distribución por estrato
+    totales_estrato = crosstab.loc['Total'][:-1]  # Excluir la columna de total
+    
+    # Crear gráfico de barras
+    fig_barras = px.bar(
+        x=totales_estrato.index,
+        y=totales_estrato.values,
+        labels={'x': 'Estrato', 'y': 'Cantidad de Registros'},
+        color=totales_estrato.values,
+        color_continuous_scale="YlGnBu",
+        text=totales_estrato.values
+    )
+    
+    fig_barras.update_traces(
+        texttemplate='%{text:,}',
+        textposition='outside'
+    )
+    
+    fig_barras.update_layout(
+        title="Cantidad de Registros por Estrato",
+        height=400,
+        yaxis_title="Cantidad de Registros",
+        xaxis_title="Estrato",
+        coloraxis_showscale=False
+    )
+    
+    st.plotly_chart(fig_barras, use_container_width=True)
+    
+    # Mostrar resumen por comuna (top 10)
+    st.subheader("Top 10 Comunas por Cantidad de Registros")
+    
+    # Obtener los totales por comuna (excluyendo la fila de Total)
+    totales_comuna = crosstab['Total'][:-1]  # Excluir la fila de total
+    
+    # Ordenar y tomar los 10 principales
+    top_comunas = totales_comuna.sort_values(ascending=False).head(10)
+    
+    # Crear gráfico de barras horizontales
+    fig_barras_h = px.bar(
+        y=top_comunas.index,
+        x=top_comunas.values,
+        orientation='h',
+        labels={'y': 'Comuna', 'x': 'Cantidad de Registros'},
+        color=top_comunas.values,
+        color_continuous_scale="YlGnBu",
+        text=top_comunas.values
+    )
+    
+    fig_barras_h.update_traces(
+        texttemplate='%{text:,}',
+        textposition='outside'
+    )
+    
+    fig_barras_h.update_layout(
+        title="Top 10 Comunas por Cantidad de Registros",
+        height=500,
+        xaxis_title="Cantidad de Registros",
+        yaxis_title="Comuna",
+        yaxis=dict(autorange="reversed"),  # Para que la mayor esté arriba
+        coloraxis_showscale=False
+    )
+    
+    st.plotly_chart(fig_barras_h, use_container_width=True)
 
 def crear_mapa(df):
     """
@@ -386,25 +632,46 @@ def mostrar_mapa():
     """
     Función principal para mostrar la página del mapa
     """
-    st.title("Mapa de Comedores")
+    st.title("Visualización de Mapas")
     
     # Verificar si hay datos cargados en la sesión
     if 'df' in st.session_state:
-        crear_mapa(st.session_state.df)
+        # Crear pestañas para los diferentes tipos de visualización
+        tab1, tab2 = st.tabs(["Mapa de Ubicaciones", "Mapa de Calor Comuna vs Estrato"])
+        
+        with tab1:
+            crear_mapa(st.session_state.df)
+        
+        with tab2:
+            crear_mapa_calor_comuna_estrato(st.session_state.df)
+            
     else:
         st.warning("No hay datos cargados. Por favor, carga los datos primero desde la pestaña DUB.")
         
         # Botón para cargar datos de demostración (solo para pruebas)
         if st.button("Cargar datos de demostración"):
-            # Datos de demostración con coordenadas ficticias
+            # Datos de demostración con coordenadas ficticias y datos para el mapa de calor
             data = {
                 'UBICACION_PREDEFINIDA': ['(4.6097, -74.0817)', '(4.6261, -74.0632)', '(4.5981, -74.0758)'],
                 'Nombre_comedor': ['Comedor A', 'Comedor B', 'Comedor C'],
-                'Se_reconoce_como': ['INDÍGENA', 'AFRODESCENDIENTE', 'MESTIZO']
+                'Se_reconoce_como': ['INDÍGENA', 'AFRODESCENDIENTE', 'MESTIZO'],
+                'Comuna': ['Comuna 1', 'Comuna 2', 'Comuna 3', 'Comuna 4', 'Comuna 5'],
+                'Estrato': ['1', '2', '3', '4', 'Sin Estrato'],
+                'Área_de_residencia_geográfica': ['URBANA', 'RURAL', 'URBANA', 'RURAL', 'URBANA']
             }
-            demo_df = pd.DataFrame(data)
-            crear_mapa(demo_df)
-
-if __name__ == "__main__":
-    st.set_page_config(layout="wide")
-    mostrar_mapa()
+            # Crear un DataFrame con 100 filas aleatorias para demostración
+            import numpy as np
+            indices = np.random.randint(0, 5, size=100)
+            demo_df = pd.DataFrame({
+                col: [data[col][i % len(data[col])] for i in indices] 
+                for col in data.keys()
+            })
+            
+            # Crear pestañas para los diferentes tipos de visualización
+            tab1, tab2 = st.tabs(["Mapa de Ubicaciones", "Mapa de Calor Comuna vs Estrato"])
+            
+            with tab1:
+                crear_mapa(demo_df)
+            
+            with tab2:
+                crear_mapa_calor_comuna_estrato(demo_df)
