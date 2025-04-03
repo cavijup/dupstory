@@ -140,6 +140,9 @@ def crear_mapa_calor_comuna_estrato(df):
     df_temp['Comuna'] = df_temp['Comuna'].fillna("No especificado")
     df_temp['Estrato'] = df_temp['Estrato'].fillna("No especificado")
     
+    # Convertir nombres de comunas a mayúsculas para estandarización
+    df_temp['Comuna'] = df_temp['Comuna'].str.upper()
+    
     # Filtrar por área de residencia si está disponible
     if 'Área_de_residencia_geográfica' in df_temp.columns:
         # Obtener valores únicos para el filtro
@@ -220,6 +223,37 @@ def crear_mapa_calor_comuna_estrato(df):
     
     # Mostrar la tabla
     st.dataframe(crosstab.style.background_gradient(cmap='YlGnBu', axis=None), use_container_width=True)
+    
+    # Mostrar gráfico de barras para distribución por estrato
+    st.subheader("Distribución por Estrato")
+    
+    # Calcular distribución por estrato
+    totales_estrato = crosstab.loc['Total'][:-1]  # Excluir la columna de total
+    
+    # Crear gráfico de barras
+    fig_barras = px.bar(
+        x=totales_estrato.index,
+        y=totales_estrato.values,
+        labels={'x': 'Estrato', 'y': 'Cantidad de Registros'},
+        color=totales_estrato.values,
+        color_continuous_scale="YlGnBu",
+        text=totales_estrato.values
+    )
+    
+    fig_barras.update_traces(
+        texttemplate='%{text:,}',
+        textposition='outside'
+    )
+    
+    fig_barras.update_layout(
+        title="Cantidad de Registros por Estrato",
+        height=400,
+        yaxis_title="Cantidad de Registros",
+        xaxis_title="Estrato",
+        coloraxis_showscale=False
+    )
+    
+    st.plotly_chart(fig_barras, use_container_width=True)
 
 def crear_mapa(df):
     """
