@@ -257,7 +257,7 @@ def crear_mapa_calor_comuna_estrato(df):
 
 def crear_mapa(df):
     """
-    Crea y muestra un mapa con las ubicaciones de los comedores.
+    Crea y muestra un mapa interactivo con las ubicaciones de los comedores.
     
     Args:
         df: DataFrame con los datos
@@ -445,6 +445,112 @@ def crear_mapa(df):
                 label="Promedio por Ubicación",
                 value=f"{promedio:.1f}"
             )
+    
+    # *** NUEVA SECCIÓN: MAPA INTERACTIVO ***
+    st.subheader("Mapa Interactivo de Comedores")
+    
+    # Calcular el centro del mapa (promedio de coordenadas)
+    if not agrupado_filtrado.empty:
+        centro_lat = agrupado_filtrado['lat'].mean()
+        centro_lon = agrupado_filtrado['lon'].mean()
+    else:
+        # Coordenadas por defecto (aproximadamente Cali, Colombia)
+        centro_lat = 3.4516
+        centro_lon = -76.5320
+    
+    # Calcular el tamaño de los marcadores según la cantidad de registros (escala logarítmica para mejor visualización)
+    if not agrupado_filtrado.empty:
+        max_conteo = agrupado_filtrado['Conteo'].max()
+        min_conteo = agrupado_filtrado['Conteo'].min()
+        
+        # Evitar división por cero
+        if max_conteo == min_conteo:
+            agrupado_filtrado['tamano_marcador'] = 15
+        else:
+            # Escalar tamaños entre 10 y 30 píxeles
+            agrupado_filtrado['tamano_marcador'] = ((agrupado_filtrado['Conteo'] - min_conteo) / (max_conteo - min_conteo) * 20 + 10)
+    
+    # Crear el mapa con Plotly
+    if not agrupado_filtrado.empty:
+        # Definir escala de colores basada en el porcentaje de ocupación
+        if 'Porcentaje_cupos' in agrupado_filtrado.columns and not agrupado_filtrado['Porcentaje_cupos'].isna().all():
+            # Usar porcentaje de ocupación para el color
+            fig_mapa = px.scatter_mapbox(
+                agrupado_filtrado,
+                lat='lat',
+                lon='lon',
+                hover_name='Comedor',
+                hover_data={
+                    'lat': False,
+                    'lon': False,
+                    'tamano_marcador': False,
+                    'Comedor': True,
+                    'Conteo': True,
+                    'Porcentaje_cupos': ':.1f'
+                },
+                size='tamano_marcador',
+                color='Porcentaje_cupos',
+                color_continuous_scale='RdYlGn_r',  # Rojo para alta ocupación, verde para baja
+                range_color=[0, 100],
+                labels={
+                    'Porcentaje_cupos': '% Ocupación',
+                    'Conteo': 'Registros'
+                },
+                zoom=11,
+                mapbox_style="open-street-map"
+            )
+        else:
+            # Usar el conteo para el color si no hay datos de ocupación
+            fig_mapa = px.scatter_mapbox(
+                agrupado_filtrado,
+                lat='lat',
+                lon='lon',
+                hover_name='Comedor',
+                hover_data={
+                    'lat': False,
+                    'lon': False,
+                    'tamano_marcador': False,
+                    'Comedor': True,
+                    'Conteo': True
+                },
+                size='tamano_marcador',
+                color='Conteo',
+                color_continuous_scale='viridis',
+                labels={'Conteo': 'Registros'},
+                zoom=11,
+                mapbox_style="open-street-map"
+            )
+        
+        # Ajustar el hover para incluir la distribución étnica e información de cupos
+        fig_mapa.update_traces(
+            hovertemplate='<b>%{hovertext}</b><br><br>' +
+                          'Registros: %{customdata[1]}<br>' +
+                          '%{customdata[2]}' +
+                          '<extra></extra>'
+        )
+        
+        # Configurar el diseño del mapa
+        fig_mapa.update_layout(
+            height=600,
+            mapbox=dict(
+                center=dict(lat=centro_lat, lon=centro_lon),
+                zoom=11
+            ),
+            margin=dict(l=0, r=0, t=0, b=0)
+        )
+        
+        # Mostrar el mapa
+        st.plotly_chart(fig_mapa, use_container_width=True)
+        
+        # Agregar nota explicativa
+        st.caption("""
+        **Nota sobre el mapa:**
+        - El tamaño de los puntos representa la cantidad de registros
+        - El color representa el porcentaje de ocupación (rojo = alta ocupación, verde = baja ocupación)
+        - Haz clic en los puntos para ver más detalles
+        """)
+    else:
+        st.warning("No hay datos para mostrar en el mapa después de aplicar los filtros.")
     
     # Mostrar tabla de resumen
     st.subheader("Resumen de Ubicaciones")
