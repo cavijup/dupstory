@@ -268,36 +268,7 @@ def crear_mapa_calor_comuna_estrato(df):
     # Mostrar la tabla
     st.dataframe(crosstab.style.background_gradient(cmap='YlGnBu', axis=None), use_container_width=True)
     
-    # Mostrar resumen por estrato
-    st.subheader("Distribución por Estrato")
-    
-    # Calcular distribución por estrato
-    totales_estrato = crosstab.loc['Total'][:-1]  # Excluir la columna de total
-    
-    # Crear gráfico de barras
-    fig_barras = px.bar(
-        x=totales_estrato.index,
-        y=totales_estrato.values,
-        labels={'x': 'Estrato', 'y': 'Cantidad de Registros'},
-        color=totales_estrato.values,
-        color_continuous_scale="YlGnBu",
-        text=totales_estrato.values
-    )
-    
-    fig_barras.update_traces(
-        texttemplate='%{text:,}',
-        textposition='outside'
-    )
-    
-    fig_barras.update_layout(
-        title="Cantidad de Registros por Estrato",
-        height=400,
-        yaxis_title="Cantidad de Registros",
-        xaxis_title="Estrato",
-        coloraxis_showscale=False
-    )
-    
-    st.plotly_chart(fig_barras, use_container_width=True)
+
     
     # Mostrar resumen por comuna (top 10)
     st.subheader("Top 10 Comunas por Cantidad de Registros")
@@ -306,7 +277,7 @@ def crear_mapa_calor_comuna_estrato(df):
     totales_comuna = crosstab['Total'][:-1]  # Excluir la fila de total
     
     # Ordenar y tomar los 10 principales
-    top_comunas = totales_comuna.sort_values(ascending=False).head(10)
+    top_comunas = totales_comuna.sort_values(ascending=True).tail(10)
     
     # Crear gráfico de barras horizontales
     fig_barras_h = px.bar(
@@ -645,31 +616,3 @@ def mostrar_mapa():
             
     else:
         st.warning("No hay datos cargados. Por favor, carga los datos primero desde la pestaña DUB.")
-        
-        # Botón para cargar datos de demostración (solo para pruebas)
-        if st.button("Cargar datos de demostración"):
-            # Datos de demostración con coordenadas ficticias y datos para el mapa de calor
-            data = {
-                'UBICACION_PREDEFINIDA': ['(4.6097, -74.0817)', '(4.6261, -74.0632)', '(4.5981, -74.0758)'],
-                'Nombre_comedor': ['Comedor A', 'Comedor B', 'Comedor C'],
-                'Se_reconoce_como': ['INDÍGENA', 'AFRODESCENDIENTE', 'MESTIZO'],
-                'Comuna': ['Comuna 1', 'Comuna 2', 'Comuna 3', 'Comuna 4', 'Comuna 5'],
-                'Estrato': ['1', '2', '3', '4', 'Sin Estrato'],
-                'Área_de_residencia_geográfica': ['URBANA', 'RURAL', 'URBANA', 'RURAL', 'URBANA']
-            }
-            # Crear un DataFrame con 100 filas aleatorias para demostración
-            import numpy as np
-            indices = np.random.randint(0, 5, size=100)
-            demo_df = pd.DataFrame({
-                col: [data[col][i % len(data[col])] for i in indices] 
-                for col in data.keys()
-            })
-            
-            # Crear pestañas para los diferentes tipos de visualización
-            tab1, tab2 = st.tabs(["Mapa de Ubicaciones", "Mapa de Calor Comuna vs Estrato"])
-            
-            with tab1:
-                crear_mapa(demo_df)
-            
-            with tab2:
-                crear_mapa_calor_comuna_estrato(demo_df)
