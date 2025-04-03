@@ -9,30 +9,35 @@ def mostrar_pagina_fies():
     # Verificar si existen las carpetas de imágenes
     ruta_imagenes = "imagenes"
     
-    # Título principal con imagen
-    col_titulo1, col_titulo2 = st.columns([3, 1])
+    # Título principal centrado y vistoso
+    st.markdown("""
+    <h1 style="text-align: center; color: #1e88e5; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-bottom: 20px;">
+    APLICACIÓN DE LA ESCALA DE EXPERIENCIA DE INSEGURIDAD ALIMENTARIA (FIES)
+    </h1>
+    """, unsafe_allow_html=True)
     
-    with col_titulo1:
-        st.header("APLICACIÓN DE LA ESCALA DE EXPERIENCIA DE INSEGURIDAD ALIMENTARIA (FIES)")
-    
-    with col_titulo2:
+    # Imagen de Hambre Cero centrada
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
         # Cargar imagen de Hambre Cero
         try:
-            st.image(os.path.join(ruta_imagenes, "hambre cero.png"), width=150)
+            st.image(os.path.join(ruta_imagenes, "hambre cero.jpg"), width=200)
         except:
-            st.warning("No se pudo cargar la imagen 'hambre cero.png'")
+            st.warning("No se pudo cargar la imagen 'hambre cero.jpg'")
     
     # Primera fila de contenido (3 columnas)
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        La FIES es una herramienta utilizada para estimar la gravedad de la inseguridad alimentaria de individuos u hogares. 
+        <div style="text-align: center; font-style: italic; padding: 15px; background-color: #f0f8ff; border-radius: 5px; border-left: 4px solid #1e88e5;">
+        "La FIES es una herramienta utilizada para estimar la gravedad de la inseguridad alimentaria de individuos u hogares. 
         Las ocho preguntas del módulo están orientadas a revelar condiciones que cubren un rango de severidad y el protocolo 
         analítico de la FIES hace posible transformar la información cualitativa recopilada (respuestas "sí / no") en 
         medidas cuantitativas de la severidad de la situación de inseguridad alimentaria, lo que permite categorizar a los 
-        encuestados en clases de inseguridad alimentaria moderada y grave para posteriormente generar las estimaciones.
-        """)
+        encuestados en clases de inseguridad alimentaria moderada y grave para posteriormente generar las estimaciones."
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
         # Cargar imagen de 8 preguntas
@@ -56,28 +61,35 @@ def mostrar_pagina_fies():
     # Separador
     st.markdown("---")
     
-    # Segunda fila - Parámetros del encuestado
-    st.subheader("Parámetros del encuestado")
+    # Segunda fila - Parámetros del encuestado (dividida en dos columnas)
+    st.markdown("---")
     
-    st.markdown("""
-    El puntaje bruto de un encuestado es la cantidad de respuestas afirmativas dadas a las ocho preguntas de la FIES, 
-    constituyendo un número entero con un valor entre 0 y 8, representando en sí misma, una medida ordinal e intuitiva 
-    de la situación de inseguridad alimentaria. Por lo cual, aquellos encuestados con puntajes brutos más altos serán 
-    los que estén experimentando situaciones relacionadas con dificultades en el acceso a los alimentos. En la ilustración 1 
-    se observa que el 23% respondieron "No" a las ocho preguntas del módulo FIES, en contraparte, el 19% respondieron 
-    afirmativamente todas las preguntas.
-    """)
+    col1, col2 = st.columns(2)
     
-    st.markdown("#### Ilustración 1. Porcentaje de respuestas afirmativas por pregunta en módulo FIES")
+    with col1:
+        st.subheader("Parámetros del encuestado")
+        
+        st.markdown("""
+        El puntaje bruto de un encuestado es la cantidad de respuestas afirmativas dadas a las ocho preguntas de la FIES, 
+        constituyendo un número entero con un valor entre 0 y 8, representando en sí misma, una medida ordinal e intuitiva 
+        de la situación de inseguridad alimentaria. Por lo cual, aquellos encuestados con puntajes brutos más altos serán 
+        los que estén experimentando situaciones relacionadas con dificultades en el acceso a los alimentos. En la ilustración 1 
+        se observa que el 23% respondieron "No" a las ocho preguntas del módulo FIES, en contraparte, el 19% respondieron 
+        afirmativamente todas las preguntas.
+        """)
     
-    # Crear datos para la tabla de respuestas afirmativas
-    respuestas_data = {
-        "RS": [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        "%": ["23%", "14%", "7%", "9%", "7%", "7%", "7%", "9%", "19%"]
-    }
-    
-    # Mostrar como tabla
-    st.table(pd.DataFrame(respuestas_data))
+    with col2:
+        st.markdown("#### Ilustración 1. Porcentaje de respuestas afirmativas por pregunta en módulo FIES")
+        
+        # Crear datos para la tabla de respuestas afirmativas
+        respuestas_data = {
+            "RS": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            "%": ["23%", "14%", "7%", "9%", "7%", "7%", "7%", "9%", "19%"]
+        }
+        
+        # Mostrar como tabla con mejor formato
+        resp_df = pd.DataFrame(respuestas_data)
+        st.table(resp_df.style.set_properties(**{'text-align': 'center'}))
     
     # Separador
     st.markdown("---")
@@ -93,8 +105,7 @@ def mostrar_pagina_fies():
         es una forma de estandarización de la métrica basada en la identificación del subconjunto de ítems que pueden 
         considerarse comunes a la FIES global y a la escala específica utilizada para la medición en cada contexto.
         
-        Como se observa en la Ilustración 2, la alineación de la escala estimada en Paraguay con los estándares globales 
-        de la FIES fue satisfactoria: se identificó un conjunto de al menos seis ítems comunes, es decir, se encontró que 
+        Como se observa en la Ilustración 2, se identificó un conjunto de al menos seis ítems comunes, es decir, se encontró que 
         los niveles de gravedad asociados a estos seis ítems estaban alineados con los niveles correspondientes en la escala 
         global de referencia, lo cual permite llevar a cabo un procedimiento de igualación sólido.
         """)
@@ -102,9 +113,9 @@ def mostrar_pagina_fies():
     with col2:
         # Cargar imagen de Ilustración 2
         try:
-            st.image(os.path.join(ruta_imagenes, "Ilustración 2 Equiparación de escala FIES.png"), width=400)
+            st.image(os.path.join(ruta_imagenes, "grafico fies.png"), width=400)
         except:
-            st.warning("No se pudo cargar la imagen 'Ilustración 2 Equiparación de escala FIES.png'")
+            st.warning("No se pudo cargar la imagen 'grafico fies.png'")
         
         # Cuadro de texto con correlación
         st.info("Correlación entre elementos comunes: 98%")
