@@ -521,12 +521,17 @@ def crear_mapa(df):
                 mapbox_style="open-street-map"
             )
         
-        # Ajustar el hover para incluir la distribución étnica e información de cupos
-        fig_mapa.update_traces(
-            hovertemplate='<b>%{hovertext}</b><br><br>' +
-                          'Registros: %{customdata[1]}<br>' +
-                          '%{customdata[2]}' +
-                          '<extra></extra>'
+        # Usar el texto de hover personalizado con toda la información detallada
+        fig_mapa.data[0].hoverinfo = 'text'
+        fig_mapa.data[0].hovertext = agrupado_filtrado['hover_text']
+        
+        # Actualizar el modo de hover para maximizar la legibilidad
+        fig_mapa.update_layout(
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=12,
+                font_family="Arial"
+            )
         )
         
         # Configurar el diseño del mapa
@@ -536,7 +541,9 @@ def crear_mapa(df):
                 center=dict(lat=centro_lat, lon=centro_lon),
                 zoom=11
             ),
-            margin=dict(l=0, r=0, t=0, b=0)
+            margin=dict(l=0, r=0, t=0, b=0),
+            # Mejorar comportamiento del hover
+            hovermode="closest"
         )
         
         # Mostrar el mapa
