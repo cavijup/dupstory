@@ -9,54 +9,23 @@ def mostrar_pagina_fies():
     # Verificar si existen las carpetas de imágenes
     ruta_imagenes = "imagenes"
     
-    # Título principal centrado y vistoso
+    # Título principal centrado y vistoso (sin imagen)
     st.markdown("""
     <h1 style="text-align: center; color: #1e88e5; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-bottom: 20px;">
     APLICACIÓN DE LA ESCALA DE EXPERIENCIA DE INSEGURIDAD ALIMENTARIA (FIES)
     </h1>
     """, unsafe_allow_html=True)
     
-    # Imagen de Hambre Cero centrada
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # Cargar imagen de Hambre Cero
-        try:
-            st.image(os.path.join(ruta_imagenes, "hambre cero.jpg"), width=200)
-        except:
-            st.warning("No se pudo cargar la imagen 'hambre cero.jpg'")
-    
-    # Primera fila de contenido (3 columnas)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div style="text-align: center; font-style: italic; padding: 15px; background-color: #f0f8ff; border-radius: 5px; border-left: 4px solid #1e88e5;">
-        "La FIES es una herramienta utilizada para estimar la gravedad de la inseguridad alimentaria de individuos u hogares. 
-        Las ocho preguntas del módulo están orientadas a revelar condiciones que cubren un rango de severidad y el protocolo 
-        analítico de la FIES hace posible transformar la información cualitativa recopilada (respuestas "sí / no") en 
-        medidas cuantitativas de la severidad de la situación de inseguridad alimentaria, lo que permite categorizar a los 
-        encuestados en clases de inseguridad alimentaria moderada y grave para posteriormente generar las estimaciones."
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        # Cargar imagen de 8 preguntas
-        try:
-            st.image(os.path.join(ruta_imagenes, "8 preguntas.png"), width=300)
-        except:
-            st.warning("No se pudo cargar la imagen '8 preguntas.png'")
-    
-    with col3:
-        st.markdown("""
-        El significado de la seguridad alimentaria, inseguridad alimentaria moderada e inseguridad alimentaria grave, 
-        y cada categoría se muestra como una proporción de la población total.
-        """)
-        
-        # Cargar imagen de niveles de inseguridad
-        try:
-            st.image(os.path.join(ruta_imagenes, "niveles de inseguridad.png"), width=300)
-        except:
-            st.warning("No se pudo cargar la imagen 'niveles de inseguridad.png'")
+    # Primera fila de contenido (solo con la explicación FIES centrada)
+    st.markdown("""
+    <div style="text-align: center; font-style: italic; padding: 15px; background-color: #f0f8ff; border-radius: 5px; border-left: 4px solid #1e88e5; margin: 20px 0;">
+    "La FIES es una herramienta utilizada para estimar la gravedad de la inseguridad alimentaria de individuos u hogares. 
+    Las ocho preguntas del módulo están orientadas a revelar condiciones que cubren un rango de severidad y el protocolo 
+    analítico de la FIES hace posible transformar la información cualitativa recopilada (respuestas "sí / no") en 
+    medidas cuantitativas de la severidad de la situación de inseguridad alimentaria, lo que permite categorizar a los 
+    encuestados en clases de inseguridad alimentaria moderada y grave para posteriormente generar las estimaciones."
+    </div>
+    """, unsafe_allow_html=True)
     
     # Separador
     st.markdown("---")
@@ -67,19 +36,29 @@ def mostrar_pagina_fies():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Parámetros del encuestado")
+        st.markdown("""
+        <h3 style="color: #1e88e5; border-bottom: 2px solid #1e88e5; padding-bottom: 8px;">
+        Parámetros del encuestado
+        </h3>
+        """, unsafe_allow_html=True)
         
         st.markdown("""
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 3px solid #757575;">
         El puntaje bruto de un encuestado es la cantidad de respuestas afirmativas dadas a las ocho preguntas de la FIES, 
         constituyendo un número entero con un valor entre 0 y 8, representando en sí misma, una medida ordinal e intuitiva 
         de la situación de inseguridad alimentaria. Por lo cual, aquellos encuestados con puntajes brutos más altos serán 
         los que estén experimentando situaciones relacionadas con dificultades en el acceso a los alimentos. En la ilustración 1 
-        se observa que el 23% respondieron "No" a las ocho preguntas del módulo FIES, en contraparte, el 19% respondieron 
-        afirmativamente todas las preguntas.
-        """)
+        se observa que el <span style="font-weight: bold; color: #d32f2f;">23%</span> respondieron "No" a las ocho preguntas del módulo FIES, en contraparte, el 
+        <span style="font-weight: bold; color: #d32f2f;">19%</span> respondieron afirmativamente todas las preguntas.
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("#### Ilustración 1. Porcentaje de respuestas afirmativas por pregunta en módulo FIES")
+        st.markdown("""
+        <h4 style="color: #333; text-align: center; background-color: #e3f2fd; padding: 10px; border-radius: 5px;">
+        Ilustración 1. Porcentaje de respuestas afirmativas por pregunta en módulo FIES
+        </h4>
+        """, unsafe_allow_html=True)
         
         # Crear datos para la tabla de respuestas afirmativas
         respuestas_data = {
@@ -87,9 +66,37 @@ def mostrar_pagina_fies():
             "%": ["23%", "14%", "7%", "9%", "7%", "7%", "7%", "9%", "19%"]
         }
         
-        # Mostrar como tabla con mejor formato
+        # Convertir a DataFrame
         resp_df = pd.DataFrame(respuestas_data)
-        st.table(resp_df.style.set_properties(**{'text-align': 'center'}))
+        
+        # Crear HTML para una tabla más atractiva
+        html_table = """
+        <table style="width:100%; border-collapse: collapse; text-align:center; margin-top:20px;">
+            <thead>
+                <tr style="background-color:#1e88e5; color:white; font-weight:bold;">
+                    <th style="padding:10px; border:1px solid #ddd;">RS</th>
+                    <th style="padding:10px; border:1px solid #ddd;">%</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        # Alternar colores para las filas
+        for i in range(len(resp_df)):
+            bg_color = "#f2f2f2" if i % 2 == 0 else "white"
+            html_table += f"""
+                <tr style="background-color:{bg_color};">
+                    <td style="padding:8px; border:1px solid #ddd;">{resp_df.iloc[i,0]}</td>
+                    <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">{resp_df.iloc[i,1]}</td>
+                </tr>
+            """
+        
+        html_table += """
+            </tbody>
+        </table>
+        """
+        
+        st.markdown(html_table, unsafe_allow_html=True)
     
     # Separador
     st.markdown("---")
@@ -111,14 +118,27 @@ def mostrar_pagina_fies():
         """)
     
     with col2:
+        # Contenedor para la imagen con sombra
+        st.markdown("""
+        <div style="background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center;">
+        """, unsafe_allow_html=True)
+        
         # Cargar imagen de Ilustración 2
         try:
             st.image(os.path.join(ruta_imagenes, "grafico fies.png"), width=400)
         except:
             st.warning("No se pudo cargar la imagen 'grafico fies.png'")
         
+        # Cerrar div contenedor
+        st.markdown("</div>", unsafe_allow_html=True)
+        
         # Cuadro de texto con correlación
-        st.info("Correlación entre elementos comunes: 98%")
+        st.markdown("""
+        <div style="margin-top: 20px; background-color: #e8f5e9; padding: 12px; border-radius: 5px; border-left: 4px solid #4caf50; text-align: center;">
+            <span style="font-weight: bold; font-size: 16px;">Correlación entre elementos comunes:</span> 
+            <span style="font-size: 18px; color: #2e7d32; font-weight: bold;">98%</span>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Separador
     st.markdown("---")
@@ -144,21 +164,64 @@ def mostrar_pagina_fies():
             "Probabilidad (sev)": [0.0, 0.000020, 0.000026, 0.000144, 0.001937, 0.025274, 0.171284, 0.561874, 0.858971]
         }
         
-        # Convertir a dataframe y formatear
-        prob_df = pd.DataFrame(prob_data)
+        # Crear HTML para una tabla más atractiva
+        html_table = """
+        <div style="background-color: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <table style="width:100%; border-collapse: collapse; text-align:center; margin-top:10px; font-size:14px;">
+            <thead>
+                <tr style="background-color:#673ab7; color:white;">
+                    <th style="padding:8px; border:1px solid #ddd;">Puntaje bruto</th>
+                    <th style="padding:8px; border:1px solid #ddd;">% Individuos</th>
+                    <th style="padding:8px; border:1px solid #ddd;">P(mod+sev)</th>
+                    <th style="padding:8px; border:1px solid #ddd;">P(sev)</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
         
-        # Formatear las probabilidades para mostrar solo 6 decimales
-        prob_df["Probabilidad (mod+sev)"] = prob_df["Probabilidad (mod+sev)"].apply(lambda x: f"{x:.6f}")
-        prob_df["Probabilidad (sev)"] = prob_df["Probabilidad (sev)"].apply(lambda x: f"{x:.6f}")
+        # Generar filas con colores alternados
+        for i in range(len(prob_data["Puntaje bruto"])):
+            bg_color = "#f3e5f5" if i % 2 == 0 else "white"
+            # Aplicar colores más intensos según aumenta la probabilidad para mod+sev
+            mod_sev_val = prob_data["Probabilidad (mod+sev)"][i]
+            mod_sev_color = "#ffffff"
+            if mod_sev_val > 0.8:
+                mod_sev_color = "#c5cae9"
+            elif mod_sev_val > 0.5:
+                mod_sev_color = "#e8eaf6"
+                
+            # Aplicar colores más intensos según aumenta la probabilidad para sev
+            sev_val = prob_data["Probabilidad (sev)"][i]
+            sev_color = "#ffffff"
+            if sev_val > 0.5:
+                sev_color = "#ffcdd2"
+            elif sev_val > 0.1:
+                sev_color = "#ffebee"
+            
+            html_table += f"""
+                <tr style="background-color:{bg_color};">
+                    <td style="padding:8px; border:1px solid #ddd;">{prob_data["Puntaje bruto"][i]}</td>
+                    <td style="padding:8px; border:1px solid #ddd;">{prob_data["Porcentaje de Individuos"][i]}</td>
+                    <td style="padding:8px; border:1px solid #ddd; background-color:{mod_sev_color};">{prob_data["Probabilidad (mod+sev)"][i]:.6f}</td>
+                    <td style="padding:8px; border:1px solid #ddd; background-color:{sev_color};">{prob_data["Probabilidad (sev)"][i]:.6f}</td>
+                </tr>
+            """
         
-        # Mostrar tabla
-        st.table(prob_df)
+        html_table += """
+            </tbody>
+        </table>
+        """
         
         # Pie de página para la tabla
-        st.caption("""
-        Pmod+grave = probabilidad de que un individuo con determinado puntaje bruto de ser categorizado como inseguro alimentario moderado-grave. 
-        Pgrave = probabilidad de que un individuo con determinado puntaje bruto de ser categorizado como inseguro alimentario grave.
-        """)
+        html_table += """
+        <div style="margin-top: 10px; font-size: 13px; color: #555; font-style: italic; padding: 8px; background-color: #f9f9f9; border-radius: 4px;">
+            <p><strong>Pmod+grave</strong> = probabilidad de que un individuo con determinado puntaje bruto sea categorizado como inseguro alimentario moderado-grave.</p> 
+            <p><strong>Pgrave</strong> = probabilidad de que un individuo con determinado puntaje bruto sea categorizado como inseguro alimentario grave.</p>
+        </div>
+        </div>
+        """
+        
+        st.markdown(html_table, unsafe_allow_html=True)
     
     # Separador
     st.markdown("---")
