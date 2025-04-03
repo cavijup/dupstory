@@ -268,8 +268,6 @@ def crear_mapa_calor_comuna_estrato(df):
     # Mostrar la tabla
     st.dataframe(crosstab.style.background_gradient(cmap='YlGnBu', axis=None), use_container_width=True)
     
-
-    
     # Mostrar resumen por comuna (top 10)
     st.subheader("Top 10 Comunas por Cantidad de Registros")
     
@@ -616,3 +614,7 @@ def mostrar_mapa():
             
     else:
         st.warning("No hay datos cargados. Por favor, carga los datos primero desde la pestaña DUB.")
+
+if __name__ == "__main__":
+    st.set_page_config(layout="wide")
+    mostrar_mapa()
