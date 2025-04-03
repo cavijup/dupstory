@@ -162,8 +162,6 @@ def crear_mapa_calor_comuna_estrato(df):
     crosstab = pd.crosstab(
         index=df_temp['Comuna'], 
         columns=df_temp['Estrato'],
-        values=None,
-        aggfunc='size',
         normalize=False
     ).fillna(0)
     
