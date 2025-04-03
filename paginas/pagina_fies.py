@@ -127,6 +127,20 @@ def mostrar_pagina_fies():
         que una persona responde más preguntas afirmativamente, tiene una mayor probabilidad de ser categorizado como 
         inseguro moderado o grave.
         </p>
+        <ul style="margin-top: 15px; line-height: 1.6; text-align: justify;">
+            <li><span style="font-weight: bold; color: #673ab7;">22.6% de la población</span> no respondió afirmativamente a ninguna pregunta (puntuación 0), lo que indica seguridad alimentaria.</li>
+            <li><span style="font-weight: bold; color: #673ab7;">29.1% de la población</span> (13.6% + 6.7% + 8.8%) tiene puntuaciones bajas (1-3), indicando vulnerabilidad pero con baja probabilidad de inseguridad alimentaria moderada o severa.</li>
+            <li><span style="font-weight: bold; color: #673ab7;">13.9% de la población</span> (6.8% + 7.1%) tiene puntuaciones medias (4-5) con probabilidades intermedias de inseguridad alimentaria moderada.</li>
+            <li><span style="font-weight: bold; color: #673ab7;">34.5% de la población</span> (7.1% + 8.9% + 18.5%) tiene puntuaciones altas (6-8), con alta probabilidad de inseguridad alimentaria moderada o severa.</li>
+        </ul>
+        <p style="margin-top: 15px; line-height: 1.6; text-align: justify;">
+        <span style="font-weight: bold;">Especialmente notable:</span>
+        </p>
+        <ul style="line-height: 1.6; text-align: justify;">
+            <li><span style="font-weight: bold; color: #673ab7;">18.5% de la población</span> respondió afirmativamente a las 8 preguntas, con un 85.9% de probabilidad de inseguridad alimentaria severa.</li>
+            <li>A partir de la puntuación 5, la probabilidad de inseguridad alimentaria moderada+severa supera el 80%.</li>
+            <li>La probabilidad de inseguridad alimentaria severa aumenta drásticamente a partir de la puntuación 6.</li>
+        </ul>
         </div>
         """, unsafe_allow_html=True)
     
