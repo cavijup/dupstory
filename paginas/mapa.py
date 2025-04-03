@@ -276,8 +276,8 @@ def crear_mapa_calor_comuna_estrato(df):
     # Obtener los totales por comuna (excluyendo la fila de Total)
     totales_comuna = crosstab['Total'][:-1]  # Excluir la fila de total
     
-    # Ordenar y tomar los 10 principales
-    top_comunas = totales_comuna.sort_values(ascending=True).tail(10)
+    # Ordenar y tomar los 10 principales (de mayor a menor)
+    top_comunas = totales_comuna.sort_values(ascending=False).head(10)
     
     # Crear gráfico de barras horizontales
     fig_barras_h = px.bar(
