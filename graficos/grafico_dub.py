@@ -56,7 +56,7 @@ def crear_grafico_dub(df):
             fig.update_layout(
                 barmode='stack',
                 title={
-                    'text': f"Progreso hacia meta de 24,000 ID DUB únicos",
+                    'text': f"Progreso hacia meta de 15,157 ID DUB únicos",
                     'font': {'size': 16},
                     'y': 0.9
                 },
@@ -85,7 +85,7 @@ def crear_grafico_dub(df):
             fig.add_annotation(
                 x=meta,
                 y=0,
-                text="Meta: 24,000",
+                text="Meta: 15,157",
                 showarrow=False,
                 yshift=20,
                 font=dict(color="red")

@@ -32,7 +32,7 @@ def crear_analisis_proyeccion(df):
         
         # Calcular estadísticas
         total_registros = df['ID DUB'].nunique()
-        meta = 24000
+        meta = 15157  # Meta de ID DUB únicos
         registros_faltantes = meta - total_registros
         promedio_diario = registros_por_dia['Registros'].mean()
         
