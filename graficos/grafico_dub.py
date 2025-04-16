@@ -12,7 +12,7 @@ def crear_grafico_dub(df):
     if 'ID DUB' in df.columns:
         st.subheader("Progreso de ID DUB")
         dub_count = df['ID DUB'].nunique()
-        meta = 24000
+        meta = 15157
         porcentaje = (dub_count / meta) * 100
         
         # Crear contenedor para la animación
